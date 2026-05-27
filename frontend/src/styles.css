@@ -23,4 +23,11 @@
   --color-text-secondary: #c0c0c0;
   --color-text-muted:     #7a7a7a;
   --color-text-disabled:  #4f4f4f;
+
+  /**/
+  --text-xs: 0.6rem;
+  --text-sm: 0.7rem;
+  --text-base: 0.8rem;
+  --text-lg: 1rem;
+  --text-xl: 1.2rem;
 }
