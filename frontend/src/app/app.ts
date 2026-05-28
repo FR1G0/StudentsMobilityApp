@@ -9,4 +9,23 @@ import { RouterOutlet } from '@angular/router';
 })
 export class App {
   protected readonly title = signal('frontend');
+
+  links : link[] = [
+    {
+      text: 'Home',
+      href: '/home',
+      icon: 'home'
+    },
+    {
+      text: 'Applications',
+      href: '/application-list',
+      icon: 'home'
+    },
+  ];
+}
+
+interface link {
+  text: string;
+  href: string;
+  icon: string;
 }
