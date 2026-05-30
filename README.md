@@ -26,7 +26,7 @@
   - [ ] Confirm creation (preview the document in a separate view then confirm)
 
 ### Lecturer
-- [ ] List of existing Mobile Applications assigned to that specific lecturer
+- [ ] List of existing Mobility Applications assigned to that lecturer
   - [ ] Application Preview
     - [ ] Show information (form input & uploaded file)
     - [ ] Show exam mappings
