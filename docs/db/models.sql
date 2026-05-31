@@ -21,6 +21,7 @@ CREATE TABLE applications (
 	year INT NOT NULL,
 	semester VARCHAR(20) NOT NULL,
 	status VARCHAR(20) NOT NULL,
+	date_submitted TIMESTAMP NOT NULL,
 	sending_institution INT NOT NULL,
 	FOREIGN KEY (sending_institution) REFERENCES institutions(id),
 	host_institution INT NOT NULL,
