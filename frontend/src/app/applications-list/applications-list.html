@@ -1,0 +1,68 @@
+<!-- title -->
+<div class="w-full">
+  <h1 class="text-xl font-bold text-white">Applications List</h1>
+</div>
+
+<!-- options -->
+<div class="w-full flex flex-start pt-2">
+  <!-- Filterby -->
+  <div class="flex items-center gap-2 w-fit bg-bg-surface border border-border-subtle rounded-lg px-2 py-1">
+    <label for="filterby" class="mdi mdi-filter-variant text-sm text-text-secondary"> Filter by</label>
+    <select [(ngModel)]="InputFilterBy" id="filterby" class=" rounded-sm py-1 text-sm outline-none bg-bg-surface">
+      @for(option of FilterOptions; track $index) {
+        <option [value]="option.id" class="bg-bg-surface text-text-muted text-center">{{option.name}}</option>
+      }
+    </select>
+  </div>
+
+  <!-- Search -->
+  <div class="flex items-center gap-2 w-fit bg-bg-surface border border-border-subtle rounded-lg px-2 py-1 ml-4">
+    <label for="search" class="mdi mdi-magnify text-sm text-text-secondary"> Search</label>
+    <input [(ngModel)]="InputSearch" id="search" type="text" class="rounded-sm py-1 text-sm outline-none bg-bg-surface" placeholder="Search by name or email" />
+  </div>
+
+</div>
+
+<!-- applications list -->
+<div class="flex flex-col mt-4">
+  <!-- header -->
+  <div class="w-full grid grid-flow-row row grid-cols-12 grid-rows-auto gap-2 p-2 mt-4 rounded-lg border border-border-subtle bg-bg-surface">
+    <p class="col-span-2">Id</p>
+    <p class="col-span-2">Name</p>
+    <p class="col-span-3">Email</p>
+    <p class="col-span-2">Referent</p>
+    <p class="col-span-2">Status</p>
+    <p class="col-span-1">Action</p>
+  </div>
+  <!-- list -->
+  <div class="flex flex-col gap-2 mt-4">
+    @for(application of ApplicationsArray; track application.id) {
+      <div class="w-full grid grid-flow-row row grid-cols-12 grid-rows-auto gap-2 p-2 rounded-lg border border-border-subtle bg-bg-surface">
+        <p class="col-span-2">{{application.id}}</p>
+        <p class="col-span-2">{{application.name}}</p>
+        <p class="col-span-3">{{application.email}}</p>
+        <p class="col-span-2">{{application.referentName}}</p>
+        <div class="col-span-2">
+          <p
+            class="w-fit px-2 py-1 border rounded-sm text-sm font-medium"
+          [ngClass]="{
+              'text-gray-400 bg-gray-800/40':    application.status === 'draft',
+              'text-yellow-400 bg-yellow-800/40': application.status === 'awaiting-la',
+              'text-sky-400 bg-sky-800/40':      application.status === 'departure',
+              'text-blue-400 bg-blue-800/40':    application.status === 'in-progress',
+              'text-purple-400 bg-purple-800/40': application.status === 'recognition',
+              'text-red-400 bg-red-800/20':      application.status === 'rejected',
+              'text-green-400 bg-green-800/40':  application.status === 'closed'
+            }">
+            {{application.status}}
+          </p>
+
+        </div>
+        <div class="col-span-1 flex flex-row sm:flex-col text-sm gap-2">
+          <button class="bg-bg-overlay text-white px-2 py-1 rounded-sm">Modify (todo)</button>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
