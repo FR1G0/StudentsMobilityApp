@@ -12,15 +12,15 @@ export class App {
 
   links : link[] = [
     {
-      text: 'Home',
-      href: '/home',
-      icon: 'home'
+      text: 'Create New Application',
+      href: '/create',
+      icon: 'mdi mdi-plus-circle-outline'
     },
     {
-      text: 'Applications',
-      href: '/application-list',
-      icon: 'home'
-    },
+      text: 'Applications List',
+      href: '/applications',
+      icon: 'mdi mdi-card-multiple-outline'
+    }
   ];
 }
 
