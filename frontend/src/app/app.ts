@@ -13,7 +13,7 @@ export class App {
   links : link[] = [
     {
       text: 'Create New Application',
-      href: '/create',
+      href: '/form',
       icon: 'mdi mdi-plus-circle-outline'
     },
     {
