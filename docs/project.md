@@ -69,6 +69,13 @@
 ## Application
 	- assigned student
 	- partner & host institutions
+    - stato
+        - bozza / draft
+        - attesa LA / waiting for LA
+        - partenza / departure
+        - in corso / in progress
+        - riconoscimento esami / recognition
+        - chiusa / closed
 	- assigned lecturer
 	- exam mappings
 
