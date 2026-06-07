@@ -1,20 +1,21 @@
-CREATE TABLE users (
-	id SERIAL PRIMARY KEY,
-	email VARCHAR(255) NOT NULL UNIQUE,
-	password_hash VARCHAR(255) NOT NULL,
-	role VARCHAR(50) NOT NULL,
-	firstname VARCHAR(255) NOT NULL,
-	lastname VARCHAR(255) NOT NULL
-	id_institution INT NOT NULL,
-	FOREIGN KEY (id_institution) REFERENCES institutions(id),
-);
-
 CREATE TABLE institutions (
 	id SERIAL PRIMARY KEY,
 	name VARCHAR(255) NOT NULL,
 	country VARCHAR(255) NOT NULL,
 	city VARCHAR(255) NOT NULL
 );
+
+CREATE TABLE users (
+	id SERIAL PRIMARY KEY,
+	email VARCHAR(255) NOT NULL UNIQUE,
+	password_hash VARCHAR(255) NOT NULL,
+	role VARCHAR(50) NOT NULL,
+	firstname VARCHAR(255) NOT NULL,
+	lastname VARCHAR(255) NOT null,
+	id_institution INT NOT NULL,
+	FOREIGN KEY (id_institution) REFERENCES institutions(id)
+);
+
 
 CREATE TABLE applications (
 	id SERIAL PRIMARY KEY,
@@ -62,8 +63,13 @@ CREATE TABLE uploaded_documents (
 
 CREATE TABLE partner_institution (
 	id SERIAL PRIMARY KEY,
+
+	/* foreign keys */
 	id_institution INT NOT NULL,
 	FOREIGN KEY (id_institution) REFERENCES institutions(id),
 	id_partner_institution INT NOT NULL,
-	FOREIGN KEY (id_partner_institution) REFERENCES institutions(id)
+	FOREIGN KEY (id_partner_institution) REFERENCES institutions(id),
+
+	/* constraints */
+	CONSTRAINT self_partner CHECK (id_institution <> id_partner_institution) /* NO A->A */
 )

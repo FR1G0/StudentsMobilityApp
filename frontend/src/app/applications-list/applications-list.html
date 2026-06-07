@@ -3,66 +3,118 @@
   <h1 class="text-xl font-bold text-white">Applications List</h1>
 </div>
 
-<!-- options -->
-<div class="w-full flex flex-start pt-2">
-  <!-- Filterby -->
-  <div class="flex items-center gap-2 w-fit bg-bg-surface border border-border-subtle rounded-lg px-2 py-1">
-    <label for="filterby" class="mdi mdi-filter-variant text-sm text-text-secondary"> Filter by</label>
-    <select [(ngModel)]="InputFilterBy" id="filterby" class=" rounded-sm py-1 text-sm outline-none bg-bg-surface">
-      @for(option of FilterOptions; track $index) {
-        <option [value]="option.id" class="bg-bg-surface text-text-muted text-center">{{option.name}}</option>
+<!-- Section: Toolbar -->
+<div class="flex flex-wrap items-center gap-2 pt-2">
+
+  <div class="relative flex items-center gap-2 bg-bg-surface border border-border-subtle hover:border-border-default rounded-lg px-3 py-2 transition-colors duration-150">
+    <span class="mdi mdi-filter-variant text-text-muted text-sm pointer-events-none"></span>
+    <select
+      [(ngModel)]="InputFilterBy"
+      id="filterby"
+      class="appearance-none bg-transparent text-[0.7rem] text-text-secondary outline-none cursor-pointer pr-5"
+    >
+      @for (option of FilterOptions; track $index) {
+        <option [value]="option.id" class="bg-bg-overlay">{{ option.name }}</option>
       }
     </select>
+    <span class="mdi mdi-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted text-xs pointer-events-none"></span>
   </div>
 
-  <!-- Search -->
-  <div class="flex items-center gap-2 w-fit bg-bg-surface border border-border-subtle rounded-lg px-2 py-1 ml-4">
-    <label for="search" class="mdi mdi-magnify text-sm text-text-secondary"> Search</label>
-    <input [(ngModel)]="InputSearch" id="search" type="text" class="rounded-sm py-1 text-sm outline-none bg-bg-surface" placeholder="Search by name or email" />
+  <div class="relative flex items-center gap-2 bg-bg-surface border border-border-subtle hover:border-border-default focus-within:border-border-strong rounded-lg px-3 py-2 transition-colors duration-150 w-64">
+    <span class="mdi mdi-magnify text-text-muted text-sm pointer-events-none"></span>
+    <input
+      [(ngModel)]="InputSearch"
+      id="search"
+      type="text"
+      placeholder="Nome, email..."
+      class="bg-transparent text-[0.7rem] text-text-primary placeholder:text-text-disabled outline-none w-full"
+    />
+    @if (InputSearch) {
+      <button type="button" (click)="InputSearch = ''" class="mdi mdi-close text-text-muted hover:text-text-secondary text-xs transition-colors"></button>
+    }
   </div>
+
+  <p class="ml-auto text-[0.6rem] text-text-muted tabular-nums">
+    {{ ApplicationsArray.length }} results
+  </p>
 
 </div>
 
-<!-- applications list -->
+<!-- Table -->
 <div class="flex flex-col mt-4">
-  <!-- header -->
-  <div class="w-full grid grid-flow-row row grid-cols-12 grid-rows-auto gap-2 p-2 mt-4 rounded-lg border border-border-subtle bg-bg-surface">
-    <p class="col-span-2">Id</p>
-    <p class="col-span-2">Name</p>
-    <p class="col-span-3">Email</p>
-    <p class="col-span-2">Referent</p>
-    <p class="col-span-2">Status</p>
-    <p class="col-span-1">Action</p>
-  </div>
-  <!-- list -->
-  <div class="flex flex-col gap-2 mt-4">
-    @for(application of ApplicationsArray; track application.id) {
-      <div class="w-full grid grid-flow-row row grid-cols-12 grid-rows-auto gap-2 p-2 rounded-lg border border-border-subtle bg-bg-surface">
-        <p class="col-span-2">{{application.id}}</p>
-        <p class="col-span-2">{{application.name}}</p>
-        <p class="col-span-3">{{application.email}}</p>
-        <p class="col-span-2">{{application.referentName}}</p>
-        <div class="col-span-2">
-          <p
-            class="w-fit px-2 py-1 border rounded-sm text-sm font-medium"
-          [ngClass]="{
-              'text-gray-400 bg-gray-800/40':    application.status === 'draft',
-              'text-yellow-400 bg-yellow-800/40': application.status === 'awaiting-la',
-              'text-sky-400 bg-sky-800/40':      application.status === 'departure',
-              'text-blue-400 bg-blue-800/40':    application.status === 'in-progress',
-              'text-purple-400 bg-purple-800/40': application.status === 'recognition',
-              'text-red-400 bg-red-800/20':      application.status === 'rejected',
-              'text-green-400 bg-green-800/40':  application.status === 'closed'
-            }">
-            {{application.status}}
-          </p>
 
+  <!-- Header -->
+  <div class="w-full grid grid-cols-12 gap-2 px-4 py-2.5 rounded-lg border border-border-subtle bg-bg-raised">
+    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">ID</p>
+    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Name</p>
+    <p class="col-span-3 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Email</p>
+    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Referent</p>
+    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Status</p>
+    <p class="col-span-1 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Actions</p>
+  </div>
+
+  <!-- Rows -->
+  <div class="flex flex-col mt-2">
+    @for (application of ApplicationsArray; track application.id; let last = $last) {
+      <div
+        class="w-full grid grid-cols-12 gap-2 px-4 py-3 items-center border-x border-t border-border-subtle bg-bg-surface hover:bg-bg-raised transition-colors duration-100 cursor-pointer group first:rounded-t-lg"
+        [class.border-b]="last"
+        [class.rounded-b-lg]="last"
+      >
+        <p class="col-span-2 text-[0.7rem] text-text-muted font-mono tabular-nums">#{{ application.id }}</p>
+        <p class="col-span-2 text-[0.7rem] text-text-primary truncate">{{ application.name }}</p>
+        <p class="col-span-3 text-[0.7rem] text-text-secondary truncate">{{ application.email }}</p>
+        <p class="col-span-2 text-[0.7rem] text-text-secondary truncate">{{ application.referentName }}</p>
+
+        <div class="col-span-2">
+          <span
+            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[0.6rem] font-medium uppercase tracking-wider border"
+            [ngClass]="{
+              'bg-[#1f1f1f] border-[#3d3d3d] text-[#7a7a7a]':   application.status === 'draft',
+              'bg-[#261f10] border-[#5e4a1a] text-[#c9a040]':   application.status === 'awaiting-la',
+              'bg-[#101e26] border-[#1a3d52] text-[#4da8d4]':   application.status === 'departure',
+              'bg-[#101826] border-[#1a2e52] text-[#4d78d4]':   application.status === 'in-progress',
+              'bg-[#1a1026] border-[#3d1a52] text-[#a04dd4]':   application.status === 'recognition',
+              'bg-[#26100e] border-[#52201a] text-[#d4584d]':   application.status === 'rejected',
+              'bg-[#101e14] border-[#1a4022] text-[#4db864]':   application.status === 'closed'
+            }"
+          >
+            <span
+              class="w-1 h-1 rounded-full"
+              [ngClass]="{
+                'bg-[#7a7a7a]': application.status === 'draft',
+                'bg-[#c9a040]': application.status === 'awaiting-la',
+                'bg-[#4da8d4]': application.status === 'departure',
+                'bg-[#4d78d4]': application.status === 'in-progress',
+                'bg-[#a04dd4]': application.status === 'recognition',
+                'bg-[#d4584d]': application.status === 'rejected',
+                'bg-[#4db864]': application.status === 'closed'
+              }"
+            ></span>
+            {{ application.status }}
+          </span>
         </div>
-        <div class="col-span-1 flex flex-row sm:flex-col text-sm gap-2">
-          <button class="bg-bg-overlay text-white px-2 py-1 rounded-sm">Modify (todo)</button>
+
+        <!-- Action -->
+        <div class="col-span-1 flex items-center opacity-60 group-hover:opacity-100 transition-opacity duration-100">
+          <button
+            type="button"
+            (click)="$event.stopPropagation()"
+            class="flex items-center gap-1 px-2.5 py-1 rounded text-[0.65rem] font-medium border border-border-default text-text-secondary hover:bg-bg-overlay hover:border-border-strong hover:text-text-primary transition-all duration-100"
+          >
+            <span class="mdi mdi-pencil-outline text-xs"></span>
+            Modify
+          </button>
         </div>
       </div>
     }
-  </div>
-</div>
 
+    @empty {
+      <div class="flex flex-col items-center justify-center py-12 mt-2 border border-border-subtle rounded-lg bg-bg-surface text-text-muted">
+        <span class="mdi mdi-file-search-outline text-2xl mb-2"></span>
+        <p class="text-[0.7rem]">Nessuna domanda trovata</p>
+      </div>
+    }
+  </div>
+
+</div>

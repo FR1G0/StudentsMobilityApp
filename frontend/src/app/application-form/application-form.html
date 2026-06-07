@@ -1,16 +1,12 @@
-<!-- title -->
 <div class="w-full">
   <h1 class="text-xl font-bold text-white"> <span class="capitalize">{{action}}</span> Application</h1>
 </div>
 
 <div class="bg-bg-surface border border-border-subtle rounded-lg p-6 mt-4">
-
   <form>
-
-    <!-- Form title -->
     <div class="mb-6 pb-4 border-b border-border-subtle">
-      <p class="text-[0.6rem] text-text-muted uppercase tracking-[0.2em] mb-0.5">Erasmus+</p>
-      <h2 class="text-[1rem] font-semibold text-text-primary">Nuova Domanda di Mobilità</h2>
+      <p class="text-[0.6rem] text-text-muted uppercase tracking-[0.2em] mb-0.5">Erasmus</p>
+      <h2 class="text-[1rem] font-semibold text-text-primary">New Mobility Application</h2>
     </div>
 
     <!-- Section: Dati Studente -->
@@ -21,7 +17,7 @@
       </legend>
       <div class="grid grid-cols-2 gap-3">
         <div class="flex flex-col gap-1">
-          <label for="firstname" class="text-[0.7rem] text-text-secondary">Nome <span class="text-red-500/70">*</span></label>
+          <label for="firstname" class="text-[0.7rem] text-text-secondary">Name <span class="text-red-500/70">*</span></label>
           <input
             id="firstname"
             name="firstname"
@@ -32,7 +28,7 @@
           />
         </div>
         <div class="flex flex-col gap-1">
-          <label for="lastname" class="text-[0.7rem] text-text-secondary">Cognome <span class="text-red-500/70">*</span></label>
+          <label for="lastname" class="text-[0.7rem] text-text-secondary">Surname <span class="text-red-500/70">*</span></label>
           <input
             id="lastname"
             name="lastname"
@@ -43,7 +39,7 @@
           />
         </div>
         <div class="flex flex-col gap-1 col-span-2">
-          <label for="email" class="text-[0.7rem] text-text-secondary">Indirizzo Email <span class="text-red-500/70">*</span></label>
+          <label for="email" class="text-[0.7rem] text-text-secondary">Email Address<span class="text-red-500/70">*</span></label>
           <div class="relative">
             <span class="mdi mdi-email-outline absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
             <input
@@ -58,28 +54,24 @@
         </div>
       </div>
     </fieldset>
-
-    <!-- Divider -->
     <div class="h-px bg-border-subtle mb-6"></div>
 
     <!-- Section: Mobilità -->
     <fieldset class="mb-6">
       <legend class="flex items-center gap-2 text-[0.6rem] text-text-muted uppercase tracking-widest mb-3">
         <span class="mdi mdi-airplane-takeoff text-sm"></span>
-        Dati Mobilità
+        Mobility Data
       </legend>
       <div class="grid grid-cols-2 gap-3">
-
-        <!-- Academic year -->
         <div class="flex flex-col gap-1">
-          <label for="academic-year" class="text-[0.7rem] text-text-secondary">Anno Accademico <span class="text-red-500/70">*</span></label>
+          <label for="academic-year" class="text-[0.7rem] text-text-secondary">Academic Year</label>
           <div class="relative">
             <select
               id="academic-year"
               name="academicYear"
               class="w-full appearance-none bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 pr-8 text-[0.8rem] text-text-primary transition-colors duration-150 cursor-pointer"
             >
-              <option value="" disabled selected class="text-text-disabled">Seleziona anno</option>
+              <option value="" disabled selected class="text-text-disabled">Select Year</option>
               <option value="2023/24">2023/2024</option>
               <option value="2024/25">2024/2025</option>
               <option value="2025/26">2025/2026</option>
@@ -88,10 +80,8 @@
             <span class="mdi mdi-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
           </div>
         </div>
-
-        <!-- Host institution -->
         <div class="flex flex-col gap-1">
-          <label for="host-institution" class="text-[0.7rem] text-text-secondary">Istituzione Ospite <span class="text-red-500/70">*</span></label>
+          <label for="host-institution" class="text-[0.7rem] text-text-secondary">Host Institution</label>
           <div class="relative">
             <span class="mdi mdi-school-outline absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
             <select
@@ -99,7 +89,7 @@
               name="hostInstitution"
               class="w-full appearance-none bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded pl-8 pr-8 py-2 text-[0.8rem] text-text-primary transition-colors duration-150 cursor-pointer"
             >
-              <option value="" disabled selected class="text-text-disabled">Seleziona istituzione</option>
+              <option value="" disabled selected class="text-text-disabled">Select Institution</option>
               @for(institution of institutions; track institution.id) {
                 <option [value]="institution.id">{{institution.name}}</option>
               }
@@ -107,10 +97,8 @@
             <span class="mdi mdi-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
           </div>
         </div>
-
-        <!-- Date start -->
         <div class="flex flex-col gap-1">
-          <label for="date-start" class="text-[0.7rem] text-text-secondary">Data Inizio <span class="text-red-500/70">*</span></label>
+          <label for="date-start" class="text-[0.7rem] text-text-secondary">Start Date <span class="text-red-500/70">*</span></label>
           <div class="relative">
             <span class="mdi mdi-calendar-start absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
             <input
@@ -121,10 +109,8 @@
             />
           </div>
         </div>
-
-        <!-- Date end -->
         <div class="flex flex-col gap-1">
-          <label for="date-end" class="text-[0.7rem] text-text-secondary">Data Fine <span class="text-red-500/70">*</span></label>
+          <label for="date-end" class="text-[0.7rem] text-text-secondary">End Date <span class="text-red-500/70">*</span></label>
           <div class="relative">
             <span class="mdi mdi-calendar-end absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
             <input
@@ -136,9 +122,8 @@
           </div>
         </div>
 
-        <!-- Referent lecturer -->
         <div class="flex flex-col gap-1 col-span-2">
-          <label for="referent" class="text-[0.7rem] text-text-secondary">Docente Referente <span class="text-red-500/70">*</span></label>
+          <label for="referent" class="text-[0.7rem] text-text-secondary">Referent <span class="text-red-500/70">*</span></label>
           <div class="relative">
             <span class="mdi mdi-account-tie-outline absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
             <input
@@ -150,18 +135,16 @@
             />
           </div>
         </div>
-
       </div>
     </fieldset>
 
-    <!-- Divider -->
     <div class="h-px bg-border-subtle mb-6"></div>
 
     <!-- Section: Exam mapping -->
 <fieldset class="mb-6">
   <legend class="flex items-center gap-2 text-[0.6rem] text-text-muted uppercase tracking-widest mb-3">
     <span class="mdi mdi-swap-horizontal text-sm"></span>
-    Mapping Esami
+    Exam Mapping
   </legend>
 
   <div class="flex flex-col gap-2">
@@ -171,7 +154,7 @@
           type="text"
           [(ngModel)]="pair.local"
           [name]="'localExam_' + i"
-          placeholder="es. Basi di Dati"
+          placeholder="es. Database Systems"
           class="bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 text-[0.8rem] text-text-primary placeholder:text-text-disabled transition-colors duration-150"
         />
         <div class="flex justify-center">
@@ -181,7 +164,7 @@
           type="text"
           [(ngModel)]="pair.host"
           [name]="'hostExam_' + i"
-          placeholder="es. Database Systems"
+          placeholder="es. Basi di Dati"
           class="bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 text-[0.8rem] text-text-primary placeholder:text-text-disabled transition-colors duration-150"
         />
         <div class="flex justify-center">
@@ -204,11 +187,10 @@
     class="mt-3 flex items-center gap-1.5 text-[0.7rem] text-text-muted hover:text-text-secondary border border-dashed border-border-default hover:border-border-strong rounded px-3 py-1.5 w-full justify-center transition-all duration-150"
   >
     <span class="mdi mdi-plus text-base"></span>
-    Aggiungi esame
+    Add Exam
   </button>
 </fieldset>
 
-    <!-- Divider -->
     <div class="h-px bg-border-subtle mb-6"></div>
 
     <!-- Section: Learning Agreement Upload -->
@@ -224,15 +206,14 @@
       >
         <span class="mdi mdi-upload text-2xl text-text-muted group-hover:text-text-secondary transition-colors duration-150"></span>
         <div class="text-center">
-          <p class="text-[0.8rem] text-text-secondary">Trascina il file qui, o <span class="text-blue-400/80">clicca per selezionare</span></p>
-          <p class="text-[0.65rem] text-text-muted mt-0.5">Solo PDF · Max 10 MB</p>
+          <p class="text-[0.8rem] text-text-secondary">Drag the file here, or <span class="text-blue-400/80">click here to select</span></p>
+          <p class="text-[0.65rem] text-text-muted mt-0.5">Only PDF · Max 10 MB</p>
         </div>
         <input id="la-upload" name="learningAgreement" type="file" accept=".pdf" class="sr-only" />
       </label>
 
     </fieldset>
 
-    <!-- Footer actions -->
     <div class="flex items-center justify-between pt-4 border-t border-border-subtle">
       <div></div>
       <div class="flex items-center gap-2">
@@ -240,14 +221,14 @@
           type="button"
           class="px-4 py-2 rounded text-[0.7rem] text-text-secondary border border-border-default hover:border-border-strong hover:bg-bg-raised transition-all duration-150"
         >
-          Annulla
+          Cancel
         </button>
         <button
           type="submit"
           class="flex items-center gap-1.5 px-4 py-2 rounded text-[0.7rem] font-medium bg-[#1a2a3a] border border-[#2e4a6e] text-[#7ab0e0] hover:bg-[#1e3248] hover:border-[#3d6090] transition-all duration-150"
         >
           <span class="mdi mdi-send-outline text-sm"></span>
-          Invia Domanda
+          Submit Application
         </button>
       </div>
     </div>
