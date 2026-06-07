@@ -61,6 +61,11 @@
 	- has assigned lecturers
     - has assigned students
     - has assigned exams/lectures
+
+## Partnership
+    - between two institutions
+    - has assigned applications
+    - cannot be self-assigned
 	
 ## Student
 	- assigned to istitution
