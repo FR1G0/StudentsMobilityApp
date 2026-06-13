@@ -19,6 +19,7 @@
         <div class="flex flex-col gap-1">
           <label for="firstname" class="text-[0.7rem] text-text-secondary">Name <span class="text-red-500/70">*</span></label>
           <input
+            [(ngModel)]="application.firstname"
             id="firstname"
             name="firstname"
             type="text"
@@ -30,6 +31,7 @@
         <div class="flex flex-col gap-1">
           <label for="lastname" class="text-[0.7rem] text-text-secondary">Surname <span class="text-red-500/70">*</span></label>
           <input
+            [(ngModel)]="application.lastname"
             id="lastname"
             name="lastname"
             type="text"
@@ -43,6 +45,7 @@
           <div class="relative">
             <span class="mdi mdi-email-outline absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
             <input
+              [(ngModel)]="application.email"
               id="email"
               name="email"
               type="email"
@@ -67,15 +70,15 @@
           <label for="academic-year" class="text-[0.7rem] text-text-secondary">Academic Year</label>
           <div class="relative">
             <select
+              [(ngModel)]="application.academic_year"
               id="academic-year"
               name="academicYear"
-              class="w-full appearance-none bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 pr-8 text-[0.8rem] text-text-primary transition-colors duration-150 cursor-pointer"
-            >
+              class="w-full appearance-none bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 pr-8 text-[0.8rem] text-text-primary transition-colors duration-150 cursor-pointer" >
               <option value="" disabled selected class="text-text-disabled">Select Year</option>
-              <option value="2023/24">2023/2024</option>
-              <option value="2024/25">2024/2025</option>
-              <option value="2025/26">2025/2026</option>
-              <option value="2026/27">2026/2027</option>
+              <option value="2026">2026/2027</option>
+              <option value="2027">2027/2028</option>
+              <option value="2028">2028/2029</option>
+              <option value="2029">2029/2030</option>
             </select>
             <span class="mdi mdi-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
           </div>
@@ -85,6 +88,7 @@
           <div class="relative">
             <span class="mdi mdi-school-outline absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
             <select
+              [(ngModel)]="application.host_istitution.id"
               id="host-institution"
               name="hostInstitution"
               class="w-full appearance-none bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded pl-8 pr-8 py-2 text-[0.8rem] text-text-primary transition-colors duration-150 cursor-pointer"
@@ -102,6 +106,7 @@
           <div class="relative">
             <span class="mdi mdi-calendar-start absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
             <input
+              [(ngModel)]="application.start_date"
               id="date-start"
               name="dateStart"
               type="date"
@@ -114,6 +119,7 @@
           <div class="relative">
             <span class="mdi mdi-calendar-end absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
             <input
+              [(ngModel)]="application.end_date"
               id="date-end"
               name="dateEnd"
               type="date"
@@ -127,6 +133,7 @@
           <div class="relative">
             <span class="mdi mdi-account-tie-outline absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
             <input
+              [(ngModel)]="application.referent.id"
               id="referent"
               name="referentLecturer"
               type="text"
