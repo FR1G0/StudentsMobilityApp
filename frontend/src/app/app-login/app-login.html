@@ -1,0 +1,66 @@
+<div class="w-full">
+  <h1 class="text-xl font-bold text-white"><span class="capitalize">Login</span></h1>
+</div>
+
+<div class="w-full h-full flex justify-center items-center p-4">
+  <div class="w-full max-w-sm bg-bg-surface border border-border-subtle rounded-lg">
+    <!-- header -->
+    <div class="px-6 pt-6 pb-5 border-b border-border-subtle">
+      <h1 class="text-lg font-medium text-text-primary">Login</h1>
+      <p class="text-sm text-text-muted mt-0.5">Log in to your account to continue</p>
+    </div>
+
+    <!-- form -->
+    <form class="px-6 py-5">
+      <div class="grid grid-cols-1 gap-3">
+        <!-- email -->
+        <div class="flex flex-col gap-1.5">
+          <label for="email" class="text-sm text-text-secondary">Email</label>
+          <div class="relative">
+            <span class="mdi mdi-email-outline absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-text-muted pointer-events-none"></span>
+            <input
+              [(ngModel)]="email"
+              id="email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              placeholder="mario.guido@stud.unive.it"
+              class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded pl-8 pr-3 py-2 text-base text-text-primary placeholder:text-text-disabled transition-colors duration-150"
+            />
+          </div>
+        </div>
+
+        <!-- password -->
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center justify-between">
+            <label for="password" class="text-sm text-text-secondary">Password</label>
+          </div>
+          <div class="relative">
+            <span class="mdi mdi-lock-outline absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-text-muted pointer-events-none"></span>
+            <input
+              [(ngModel)]="password"
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="••••••••••••"
+              class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded pl-8 pr-9 py-2 text-base text-text-primary placeholder:text-text-disabled transition-colors duration-150"
+            />
+          </div>
+        </div>
+
+      </div>
+
+      <!-- actions -->
+      <div class="mt-5 pt-4 border-t border-border-subtle">
+        <button (click)="attempt_login()" class="w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded text-sm font-medium bg-[#1a2a3a] border border-[#2e4a6e] text-[#7ab0e0] hover:bg-[#1e3248] hover:border-[#3d6090] transition-all duration-150">
+          <span class="mdi mdi-login-variant text-base"></span>
+          Login
+        </button>
+        <p class="text-xs text-red-500 text-center mt-3">
+          {{error_message}}
+        </p>
+      </div>
+    </form>
+  </div>
+</div>
