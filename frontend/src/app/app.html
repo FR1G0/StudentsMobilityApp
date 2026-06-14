@@ -3,34 +3,43 @@
 
   <div class="flex min-h-screen">
     <aside class="flex flex-col w-64 shrink-0 overflow-hidden border-r bg-bg-surface border-border-subtle transition-all duration-200 peer-checked:w-16" >
-        <div class="text-lg font-bold flex h-12 items-center justify-start p-4">
+        <div class="text-lg font-bold flex h-12 items-center justify-start p-4 ">
+          <span class="mdi mdi-airplane-takeoff me-2"></span>
           Students Mobility App
         </div>
         <ul class="flex flex-col gap-2 px-4">
           @for(link of links; track link.href) {
-            <li>
-              <a [href]="link.href" class="flex items-center rounded-sm px-2 text-sm text-text-secondary">
-                <span class="text-lg {{link.icon}} pe-2"></span>
-                <p>{{link.text}}</p>
-              </a>
-            </li>
+            @if(!link.loginRequired || isLoggedIn) {
+              <li>
+                <a [routerLink]="link.href" class="flex items-center rounded-sm px-2 text-sm text-text-secondary">
+                  <span class="text-lg {{link.icon}} pe-2"></span>
+                  <p>{{link.text}}</p>
+                </a>
+              </li>
+            }
           }
         </ul>
         <div class="mt-auto p-4 grid grid-cols-[auto_auto_1fr] items-center gap-2">
-          <img src="/pfp.webp" class="w-8 h-8 bg-white rounded-full" />
-          <!-- todo: add logout popup -->
-          <div class="flex flex-col">
-            <span class="text-sm font-medium">user name</span>
-            <span class="text-xs text-text-secondary">role</span>
-          </div>
-          <button class="text-xs ml-auto text-text-secondary hover:text-text-primary w-min p-1 rounded-sm border border-text-disabled">logout</button>
+          @if(isLoggedIn) {
+            <img src="/pfp.webp" class="w-8 h-8 bg-white rounded-full" />
+            <!-- todo: add logout popup -->
+            <div class="flex flex-col">
+              <span class="text-sm font-medium">{{`${user_data.firstname} ${user_data.lastname}`}}</span>
+              <span class="text-xs text-text-secondary">{{user_data.role}}</span>
+            </div>
+            <button (click)="attempt_logout()" class="text-xs ml-auto text-text-secondary hover:text-text-primary w-min p-1 rounded-sm border border-text-disabled">logout</button>
+          } @else {
+            <p class="text-center w-full text-xs">You are currently not looged in, please login</p>
+            <button routerLink="login" class="text-xs ml-auto text-text-secondary hover:text-text-primary col-span-full w-full p-1 rounded-lg border border-text-disabled">Login</button>
+          }
         </div>
     </aside>
 
     <div class="flex min-w-0 flex-1 flex-col">
-      <header class="flex h-12 items-center justify-between border-b bg-bg-surface border-bg-raised px-4" > title </header>
         <main class="flex-1 overflow-auto p-4">
-            <router-outlet></router-outlet>
+            <div class="max-w-4xl mx-auto">
+              <router-outlet></router-outlet>
+            </div>
         </main>
     </div>
   </div>

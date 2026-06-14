@@ -14,6 +14,11 @@ export class ApplicationForm {
   action: string = "create";
 
   // must be fetched form backend using the student's instution id -> intitutions partners
+  application : FullApplicationInterface = {
+    host_istitution : {} as InstitutionData,
+    referent : {} as ReferentData
+  } as FullApplicationInterface;
+
   institutions: InstitutionData[] = [
     { id: 1, name: "TU Berlin" },
     { id: 2, name: "ETH Zürich" },
@@ -38,14 +43,25 @@ export class ApplicationForm {
   }
 }
 
+export interface FullApplicationInterface {
+  firstname: string;
+  lastname : string;
+  email : string;
+  academic_year : number; // 2026, which then becomes 2026/2027
+  start_date: string;
+  end_date: string;
+  referent: ReferentData;
+  host_istitution: InstitutionData;
+}
+
 interface InstitutionData {
   id: number;
   name: String;
 }
 
-interface ExamPair {
-  local: String;
-  host: String;
+interface ReferentData {
+  id: number;
+  name: String;
 }
 
 interface ExamData {
@@ -53,3 +69,9 @@ interface ExamData {
   name: String;
   credits: number;
 }
+
+interface ExamPair {
+  local: String;
+  host: String;
+}
+

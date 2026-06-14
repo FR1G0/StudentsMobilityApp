@@ -1,0 +1,10 @@
+<div class="h-full w-full flex flex-col items-center justify-center gap-2 px-6 py-24 text-center">
+  <span class="mdi mdi-airplane-takeoff text-4xl text-text-muted mb-2"></span>
+  <header class="text-xl font-bold text-text-primary">Student Mobility App</header>
+  <p class="text-sm text-text-muted">Una Piattaforma per creare &amp; amministrare studenti erasmus+</p>
+  @if (!this.app.isLoggedIn) {
+    <button routerLink="/login" class="px-4 py-1 text-sm font-medium text-text-primary border border-border-default rounded hover:bg-bg-raised transition-colors duration-150">
+      Login
+    </button>
+  }
+</div>
