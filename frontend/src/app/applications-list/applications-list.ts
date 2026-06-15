@@ -1,53 +1,78 @@
-import { Component } from '@angular/core';
-
-import { NgClass } from '@angular/common'
+import { Component, OnInit, ChangeDetectorRef} from '@angular/core';
+import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+
+import { Applications, Application } from '../api/applications';
 
 @Component({
   selector: 'app-applications-list',
-  imports: [FormsModule,NgClass],
+  imports: [FormsModule, NgClass],
   templateUrl: './applications-list.html',
   styleUrl: './applications-list.css',
 })
-export class ApplicationsList {
+export class ApplicationsList implements OnInit {
+  constructor(
+    private applicationsApi: Applications,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
 
+  inputSearch: string = '';
+  inputFilterBy: string = 'all';
+  isLoading = true;
 
-  InputSearch: String = "";
-  InputFilterBy: String = "all";
+  applications: Application[] = [];
 
-  // mock data, must be fetched from backend
-ApplicationsArray: ApplicationPreviewData[] = [
-  { id: "87371", name: "Application 1", referentName: "prof. Example", email: "student@email.com", status: "draft" },
-  { id: "22311", name: "Application 2", referentName: "prof. Example", email: "student@email.com", status: "awaiting-la" },
-  { id: "55283", name: "Application 3", referentName: "prof. Example", email: "student@email.com", status: "departure" },
-  { id: "13947", name: "Application 4", referentName: "prof. Example", email: "student@email.com", status: "in-progress" },
-  { id: "67432", name: "Application 5", referentName: "prof. Example", email: "student@email.com", status: "recognition" },
-  { id: "39104", name: "Application 6", referentName: "prof. Example", email: "student@email.com", status: "rejected" },
-  { id: "80256", name: "Application 7", referentName: "prof. Example", email: "student@email.com", status: "closed" }
-];
-
-  // filtering options
-  FilterOptions: Filter[] = [
-    { id: "all", name: "All" },
-    { id: "draft", name: "Draft" },
-    { id: "awaiting-la", name: "Awaiting LA" },
-    { id: "departure", name: "Departure" },
-    { id: "in-progress", name: "In Progress" },
-    { id: "recognition", name: "Recognition" },
-    { id: "rejected", name: "Rejected" },
-    { id: "closed", name: "Closed" }
+  filterOptions: FilterOption[] = [
+    { id: 'all',                        name: 'All' },
+    { id: 'created',                    name: 'Created' },
+    { id: 'learning_agreement_pending', name: 'LA Pending' },
+    { id: 'pre_departure_completed',    name: 'Pre-Departure' },
+    { id: 'mobility_ongoing',           name: 'Ongoing' },
+    { id: 'exam_recognition',           name: 'Exam Recognition' },
+    { id: 'closed',                     name: 'Closed' }
   ];
+
+  ngOnInit() {
+    this.applicationsApi.getApplications().subscribe({
+      next: res => {
+        this.applications = res;
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        console.error(err);
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  get filteredApplications(): Application[] {
+    return this.applications
+      .filter(a => this.inputFilterBy === 'all' || a.status === this.inputFilterBy)
+      .filter(a => {
+        if (!this.inputSearch) return true;
+        const q = this.inputSearch.toLowerCase();
+        return String(a.id).includes(q) ||
+               String(a.year).includes(q) ||
+               a.semester.toLowerCase().includes(q) ||
+               a.status.toLowerCase().includes(q) ||
+               a.notes.toLowerCase().includes(q);
+      });
+  }
+
+  formatYear(year: number): string {
+    return `${year}/${year + 1}`;
+  }
+
+  editApplication(application: Application) {
+    this.router.navigate(['/form'], { state: { application, mode: 'edit' } });
+  }
 }
 
-interface Filter {
-  id: String;
-  name: String;
-}
-
-export interface ApplicationPreviewData {
-  id: String;
-  name: String;
-  email: String;
-  referentName: String;
-  status: String;
+interface FilterOption {
+  id: string;
+  name: string;
 }
