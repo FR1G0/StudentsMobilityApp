@@ -11,7 +11,7 @@ export class Cookies {
 
   // function to set (insert or update) cookies
   setCookie(name: string, value: string, days?: number): void {
-    if(isPlatformBrowser(this.platformId)) {
+    if(!isPlatformBrowser(this.platformId)) { return; }
       let expires = '';
       if (days) {
         const date = new Date();
@@ -21,12 +21,11 @@ export class Cookies {
       // Secure and SameSite configuration is highly recommended
 
       document.cookie = `${name}=${value || ''}${expires}; path=/; SameSite=Strict; Secure`;
-    }
   }
 
   // function to get cookie
   getCookie(name: string): string | null {
-    if(isPlatformBrowser(this.platformId)) {
+    if(!isPlatformBrowser(this.platformId)) { return null; }
       const nameEQ = name + '=';
       const ca = document.cookie.split(';');
       for (let i = 0; i < ca.length; i++) {
@@ -34,14 +33,12 @@ export class Cookies {
         while (c.charAt(0) === ' ') c = c.substring(1, c.length);
         if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
       }
-    }
     return null;
   }
 
   // function to delete a cookie
   deleteCookie(name: string): void {
-    if(isPlatformBrowser(this.platformId)) {
+    if(isPlatformBrowser(this.platformId)) { return; }
       document.cookie = `${name}=; Max-Age=-99999999; path=/; SameSite=Strict; Secure`;
-    }
   }
 }
