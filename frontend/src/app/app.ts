@@ -57,7 +57,7 @@ export class App {
       text: 'Home',
       href: '/home',
       loginRequired : false,
-      icon: 'mdi mdi-home'
+      icon: 'mdi mdi-home-outline'
     },
     {
       text: 'Create New Application',

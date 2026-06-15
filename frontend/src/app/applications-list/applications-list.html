@@ -9,11 +9,10 @@
   <div class="relative flex items-center gap-2 bg-bg-surface border border-border-subtle hover:border-border-default rounded-lg px-3 py-2 transition-colors duration-150">
     <span class="mdi mdi-filter-variant text-text-muted text-sm pointer-events-none"></span>
     <select
-      [(ngModel)]="InputFilterBy"
+      [(ngModel)]="inputFilterBy"
       id="filterby"
-      class="appearance-none bg-transparent text-[0.7rem] text-text-secondary outline-none cursor-pointer pr-5"
-    >
-      @for (option of FilterOptions; track $index) {
+      class="appearance-none bg-transparent text-[0.7rem] text-text-secondary outline-none cursor-pointer pr-5" >
+      @for (option of filterOptions; track option.id) {
         <option [value]="option.id" class="bg-bg-overlay">{{ option.name }}</option>
       }
     </select>
@@ -23,19 +22,19 @@
   <div class="relative flex items-center gap-2 bg-bg-surface border border-border-subtle hover:border-border-default focus-within:border-border-strong rounded-lg px-3 py-2 transition-colors duration-150 w-64">
     <span class="mdi mdi-magnify text-text-muted text-sm pointer-events-none"></span>
     <input
-      [(ngModel)]="InputSearch"
+      [(ngModel)]="inputSearch"
       id="search"
       type="text"
-      placeholder="Nome, email..."
+      placeholder="ID, year, semester, status..."
       class="bg-transparent text-[0.7rem] text-text-primary placeholder:text-text-disabled outline-none w-full"
     />
-    @if (InputSearch) {
-      <button type="button" (click)="InputSearch = ''" class="mdi mdi-close text-text-muted hover:text-text-secondary text-xs transition-colors"></button>
+    @if (inputSearch) {
+      <button type="button" (click)="inputSearch = ''" class="mdi mdi-close text-text-muted hover:text-text-secondary text-xs transition-colors"></button>
     }
   </div>
 
   <p class="ml-auto text-[0.6rem] text-text-muted tabular-nums">
-    {{ ApplicationsArray.length }} results
+    {{ filteredApplications.length }} results
   </p>
 
 </div>
@@ -45,76 +44,82 @@
 
   <!-- Header -->
   <div class="w-full grid grid-cols-12 gap-2 px-4 py-2.5 rounded-lg border border-border-subtle bg-bg-raised">
-    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">ID</p>
-    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Name</p>
-    <p class="col-span-3 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Email</p>
-    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Referent</p>
+    <p class="col-span-1 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">ID</p>
+    <p class="col-span-3 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Academic Year</p>
+    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Semester</p>
+    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Host Inst.</p>
     <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Status</p>
-    <p class="col-span-1 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Actions</p>
+    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Actions</p>
   </div>
+
+  <!-- Loading state -->
+  @if (isLoading) {
+    <div class="flex items-center justify-center py-12 mt-2 border border-border-subtle rounded-lg bg-bg-surface text-text-muted">
+      <span class="mdi mdi-loading mdi-spin text-xl mr-2"></span>
+      <p class="text-[0.7rem]">Loading applications...</p>
+    </div>
+  }
 
   <!-- Rows -->
-  <div class="flex flex-col mt-2">
-    @for (application of ApplicationsArray; track application.id; let last = $last) {
-      <div
-        class="w-full grid grid-cols-12 gap-2 px-4 py-3 items-center border-x border-t border-border-subtle bg-bg-surface hover:bg-bg-raised transition-colors duration-100 cursor-pointer group first:rounded-t-lg"
-        [class.border-b]="last"
-        [class.rounded-b-lg]="last"
-      >
-        <p class="col-span-2 text-[0.7rem] text-text-muted font-mono tabular-nums">#{{ application.id }}</p>
-        <p class="col-span-2 text-[0.7rem] text-text-primary truncate">{{ application.name }}</p>
-        <p class="col-span-3 text-[0.7rem] text-text-secondary truncate">{{ application.email }}</p>
-        <p class="col-span-2 text-[0.7rem] text-text-secondary truncate">{{ application.referentName }}</p>
+  @if (!isLoading) {
+    <div class="flex flex-col mt-2">
+      @for (application of filteredApplications; track application.id; let last = $last) {
+        <div
+          class="w-full grid grid-cols-12 gap-2 px-4 py-3 items-center border-x border-t border-border-subtle bg-bg-surface hover:bg-bg-raised transition-colors duration-100 cursor-pointer group first:rounded-t-lg"
+          [class.border-b]="last"
+          [class.rounded-b-lg]="last" >
+          <p class="col-span-1 text-[0.7rem] text-text-muted font-mono tabular-nums">#{{ application.id }}</p>
+          <p class="col-span-3 text-[0.7rem] text-text-primary truncate">{{ formatYear(application.year) }}</p>
+          <p class="col-span-2 text-[0.7rem] text-text-secondary truncate capitalize">{{ application.semester }}</p>
+          <p class="col-span-2 text-[0.7rem] text-text-muted font-mono">#{{ application.host_institution }}</p>
 
-        <div class="col-span-2">
-          <span
-            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[0.6rem] font-medium uppercase tracking-wider border"
-            [ngClass]="{
-              'bg-[#1f1f1f] border-[#3d3d3d] text-[#7a7a7a]':   application.status === 'draft',
-              'bg-[#261f10] border-[#5e4a1a] text-[#c9a040]':   application.status === 'awaiting-la',
-              'bg-[#101e26] border-[#1a3d52] text-[#4da8d4]':   application.status === 'departure',
-              'bg-[#101826] border-[#1a2e52] text-[#4d78d4]':   application.status === 'in-progress',
-              'bg-[#1a1026] border-[#3d1a52] text-[#a04dd4]':   application.status === 'recognition',
-              'bg-[#26100e] border-[#52201a] text-[#d4584d]':   application.status === 'rejected',
-              'bg-[#101e14] border-[#1a4022] text-[#4db864]':   application.status === 'closed'
-            }"
-          >
+          <div class="col-span-2">
             <span
-              class="w-1 h-1 rounded-full"
+              class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[0.6rem] font-medium uppercase tracking-wider border"
               [ngClass]="{
-                'bg-[#7a7a7a]': application.status === 'draft',
-                'bg-[#c9a040]': application.status === 'awaiting-la',
-                'bg-[#4da8d4]': application.status === 'departure',
-                'bg-[#4d78d4]': application.status === 'in-progress',
-                'bg-[#a04dd4]': application.status === 'recognition',
-                'bg-[#d4584d]': application.status === 'rejected',
-                'bg-[#4db864]': application.status === 'closed'
-              }"
-            ></span>
-            {{ application.status }}
-          </span>
-        </div>
+                'bg-[#1f1f1f] border-[#3d3d3d] text-[#7a7a7a]':   application.status === 'created',
+                'bg-[#261f10] border-[#5e4a1a] text-[#c9a040]':   application.status === 'learning_agreement_pending',
+                'bg-[#101e26] border-[#1a3d52] text-[#4da8d4]':   application.status === 'pre_departure_completed',
+                'bg-[#101826] border-[#1a2e52] text-[#4d78d4]':   application.status === 'mobility_ongoing',
+                'bg-[#1a1026] border-[#3d1a52] text-[#a04dd4]':   application.status === 'exam_recognition',
+                'bg-[#101e14] border-[#1a4022] text-[#4db864]':   application.status === 'closed'
+              }" >
+              <span
+                class="w-1 h-1 rounded-full"
+                [ngClass]="{
+                  'bg-[#7a7a7a]': application.status === 'created',
+                  'bg-[#c9a040]': application.status === 'learning_agreement_pending',
+                  'bg-[#4da8d4]': application.status === 'pre_departure_completed',
+                  'bg-[#4d78d4]': application.status === 'mobility_ongoing',
+                  'bg-[#a04dd4]': application.status === 'exam_recognition',
+                  'bg-[#4db864]': application.status === 'closed'
+                }"
+              ></span>
+              {{ application.status }}
+            </span>
+          </div>
 
-        <!-- Action -->
-        <div class="col-span-1 flex items-center opacity-60 group-hover:opacity-100 transition-opacity duration-100">
-          <button
-            type="button"
-            (click)="$event.stopPropagation()"
-            class="flex items-center gap-1 px-2.5 py-1 rounded text-[0.65rem] font-medium border border-border-default text-text-secondary hover:bg-bg-overlay hover:border-border-strong hover:text-text-primary transition-all duration-100"
-          >
-            <span class="mdi mdi-pencil-outline text-xs"></span>
-            Modify
-          </button>
+          <!-- Action -->
+          <div class="col-span-2 flex items-center opacity-60 group-hover:opacity-100 transition-opacity duration-100">
+            <button
+              type="button"
+              (click)="$event.stopPropagation(); editApplication(application)"
+              class="flex items-center gap-1 px-2.5 py-1 rounded text-[0.65rem] font-medium border border-border-default text-text-secondary hover:bg-bg-overlay hover:border-border-strong hover:text-text-primary transition-all duration-100"
+            >
+              <span class="mdi mdi-pencil-outline text-xs"></span>
+              Modify
+            </button>
+          </div>
         </div>
-      </div>
-    }
+      }
 
-    @empty {
-      <div class="flex flex-col items-center justify-center py-12 mt-2 border border-border-subtle rounded-lg bg-bg-surface text-text-muted">
-        <span class="mdi mdi-file-search-outline text-2xl mb-2"></span>
-        <p class="text-[0.7rem]">Nessuna domanda trovata</p>
-      </div>
-    }
-  </div>
+      @empty {
+        <div class="flex flex-col items-center justify-center py-12 mt-2 border border-border-subtle rounded-lg bg-bg-surface text-text-muted">
+          <span class="mdi mdi-file-search-outline text-2xl mb-2"></span>
+          <p class="text-[0.7rem]">No applications found</p>
+        </div>
+      }
+    </div>
+  }
 
 </div>
