@@ -7,7 +7,7 @@ import { AppHome } from './app-home/app-home';
 
 export const routes: Routes = [
   {
-    path: "home",
+    path: "",
     title: "SMA - Homepage",
     component: AppHome
   },

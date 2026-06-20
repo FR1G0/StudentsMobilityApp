@@ -1,5 +1,6 @@
 import { Component,
   ChangeDetectorRef,
+  Inject,
   signal,
   PLATFORM_ID
 } from '@angular/core';
@@ -20,7 +21,8 @@ export class App {
   constructor(
     private cookie_manager : Cookies,
     private router : Router,
-    private cdr : ChangeDetectorRef
+    private cdr : ChangeDetectorRef,
+    @Inject(PLATFORM_ID) private platformId: Object
   ){}
 
   ngOnInit() {
@@ -46,16 +48,18 @@ export class App {
   user_data : UserData = {} as UserData;
 
   attempt_logout() {
+    if(!isPlatformBrowser(this.platformId)) { return; }
     this.isLoggedIn = false;
     this.cdr.markForCheck();
     this.cookie_manager.deleteCookie('token');
     this.cookie_manager.deleteCookie('user');
+    this.router.navigate(['login']);
   }
 
   links : link[] = [
     {
       text: 'Home',
-      href: '/home',
+      href: '/',
       loginRequired : false,
       icon: 'mdi mdi-home-outline'
     },
