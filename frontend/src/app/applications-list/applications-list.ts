@@ -1,5 +1,5 @@
-import { Component, OnInit, ChangeDetectorRef} from '@angular/core';
-import { NgClass } from '@angular/common';
+import { Component, OnInit, ChangeDetectorRef, Inject, PLATFORM_ID } from '@angular/core';
+import { NgClass, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
@@ -15,7 +15,8 @@ export class ApplicationsList implements OnInit {
   constructor(
     private applicationsApi: Applications,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   inputSearch: string = '';
@@ -35,6 +36,7 @@ export class ApplicationsList implements OnInit {
   ];
 
   ngOnInit() {
+    if(!isPlatformBrowser(this.platformId)) { return; }
     this.applicationsApi.getApplications().subscribe({
       next: res => {
         this.applications = res;
@@ -65,6 +67,14 @@ export class ApplicationsList implements OnInit {
 
   formatYear(year: number): string {
     return `${year}/${year + 1}`;
+  }
+
+  shortenStatus(status: string): string {
+    if(status=='learning_agreement_pending') return 'la pending';
+    if(status=='pre_departure_completed') return 'pre completed';
+    if(status=='mobility_ongoing') return 'ongoing';
+    if(status=='learning_agreement_pending') return 'closed';
+    return status;
   }
 
   editApplication(application: Application) {
