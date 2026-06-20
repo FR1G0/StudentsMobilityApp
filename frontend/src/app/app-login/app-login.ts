@@ -29,10 +29,10 @@ export class AppLogin {
 
   attempt_login() {
     this.auth.login(this.email, this.password).subscribe({
-      next: res => {
-        console.log(res);
-        this.cookie_manager.setCookie('token',res.token,1);
-        this.cookie_manager.setCookie('user',JSON.stringify(res.user),1);
+      next: async res => {
+        await this.offerSaveCredentials(this.email, this.password);
+        this.cookie_manager.setCookie('token', res.token, 1);
+        this.cookie_manager.setCookie('user', JSON.stringify(res.user), 1);
         this.app.update_data();
         this.router.navigate(['applications']);
         this.cdr.markForCheck();
@@ -43,5 +43,9 @@ export class AppLogin {
         console.log(err);
       }
     });
+  }
+
+  private async offerSaveCredentials(email: string, password: string): Promise<void> {
+
   }
 }
