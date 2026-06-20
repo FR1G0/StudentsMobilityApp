@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { Cookies } from '../cookies';
 import { StatusResponse } from './users';
+import { MappedExamRow } from './exams';
 
 @Injectable({
   providedIn: 'root',
@@ -97,6 +98,12 @@ export class Applications {
   deleteApplicationDocument(id: number): Observable<StatusResponse> {
     const endpoint = this.base_url + '/api/application/document/' + id + '/delete';
     return this.http.post<StatusResponse>(endpoint, {}, { headers: this.authHeaders() });
+  }
+
+  // returns the list of mapped_exams rows associated to the given application
+  listApplicationExamMappings(applicationId: number): Observable<MappedExamRow[]> {
+    const endpoint = this.base_url + '/api/application/exams_mapping/' + applicationId;
+    return this.http.get<MappedExamRow[]>(endpoint, { headers: this.authHeaders() });
   }
 
   // returns the list of allowed document types
