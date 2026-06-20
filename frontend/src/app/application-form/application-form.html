@@ -163,17 +163,20 @@
           </div>
         </div>
 
+        @if(notes != '') {
         <div class="flex flex-col gap-1 col-span-2">
           <label for="notes" class="text-[0.7rem] text-text-secondary">Notes</label>
           <textarea
             [(ngModel)]="notes"
             id="notes"
             name="notes"
+            [disabled]="user.role=='student'"
             rows="3"
-            placeholder="Additional notes..."
+            placeholder="Additional notes by referent ..."
             class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 text-[0.8rem] text-text-primary placeholder:text-text-disabled transition-colors duration-150 resize-none"
           ></textarea>
         </div>
+        }
 
       </div>
     </fieldset>
@@ -259,19 +262,8 @@
         Learning Agreement
       </legend>
 
-      @if (!selectedFile) {
-        <label
-          for="la-upload"
-          class="flex flex-col items-center justify-center gap-2 w-full py-8 border border-dashed border-border-default hover:border-border-strong bg-bg-base hover:bg-bg-raised rounded cursor-pointer transition-all duration-150 group"
-        >
-          <span class="mdi mdi-upload text-2xl text-text-muted group-hover:text-text-secondary transition-colors duration-150"></span>
-          <div class="text-center">
-            <p class="text-[0.8rem] text-text-secondary">Drag the file here, or <span class="text-blue-400/80">click here to select</span></p>
-            <p class="text-[0.65rem] text-text-muted mt-0.5">Only PDF · Max 10 MB</p>
-          </div>
-          <input id="la-upload" name="learningAgreement" type="file" accept=".pdf" class="sr-only" (change)="onFileSelected($event)" />
-        </label>
-      } @else {
+      @if (selectedFile) {
+        <!-- newly selected file -->
         <div class="flex items-center gap-3 px-4 py-3 bg-bg-raised border border-border-default rounded">
           <span class="mdi mdi-file-pdf-box text-red-400 text-xl shrink-0"></span>
           <div class="flex flex-col min-w-0 flex-1">
@@ -286,6 +278,36 @@
             <span class="mdi mdi-close text-base"></span>
           </button>
         </div>
+      } @else if (existingDocument) {
+        <!-- already uploaded document (edit mode) -->
+        <div class="flex items-center gap-3 px-4 py-3 bg-bg-raised border border-border-default rounded">
+          <span class="mdi mdi-file-check-outline text-green-400/80 text-xl shrink-0"></span>
+          <div class="flex flex-col min-w-0 flex-1">
+            <span class="text-[0.8rem] text-text-primary truncate">{{ existingDocument.file_path.split('/').pop() }}</span>
+            <span class="text-[0.65rem] text-text-muted">Already uploaded · {{ existingDocument.status }}</span>
+          </div>
+          <label
+            for="la-upload"
+            class="flex items-center gap-1 px-2.5 py-1 rounded text-[0.65rem] text-text-secondary border border-border-default hover:border-border-strong hover:bg-bg-overlay cursor-pointer transition-all duration-100 shrink-0"
+          >
+            <span class="mdi mdi-swap-horizontal text-xs"></span>
+            Replace
+          </label>
+          <input id="la-upload" name="learningAgreement" type="file" accept=".pdf" class="sr-only" (change)="onFileSelected($event)" />
+        </div>
+      } @else {
+        <!-- no file yet -->
+        <label
+          for="la-upload"
+          class="flex flex-col items-center justify-center gap-2 w-full py-8 border border-dashed border-border-default hover:border-border-strong bg-bg-base hover:bg-bg-raised rounded cursor-pointer transition-all duration-150 group"
+        >
+          <span class="mdi mdi-upload text-2xl text-text-muted group-hover:text-text-secondary transition-colors duration-150"></span>
+          <div class="text-center">
+            <p class="text-[0.8rem] text-text-secondary">Drag the file here, or <span class="text-blue-400/80">click here to select</span></p>
+            <p class="text-[0.65rem] text-text-muted mt-0.5">Only PDF · Max 10 MB</p>
+          </div>
+          <input id="la-upload" name="learningAgreement" type="file" accept=".pdf" class="sr-only" (change)="onFileSelected($event)" />
+        </label>
       }
 
     </fieldset>

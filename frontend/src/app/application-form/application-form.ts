@@ -1,13 +1,13 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ChangeDetectorRef, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { Cookies } from '../cookies';
-import { User } from '../api/users';
+import { User, Users } from '../api/users';
 import { Institutions, PartnerLink } from '../api/institutions';
-import { Applications, ApplicationInsertBody, ApplicationUpdateBody } from '../api/applications';
-import { Exams, Exam } from '../api/exams';
+import { Applications, ApplicationInsertBody, ApplicationUpdateBody, UploadedDocument } from '../api/applications';
+import { Exams, Exam, MappedExamRow } from '../api/exams';
 
 @Component({
   selector: 'app-application-form',
@@ -21,12 +21,15 @@ export class ApplicationForm {
     private institutionsApi: Institutions,
     private applicationsApi: Applications,
     private examsApi: Exams,
+    private usersApi: Users,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   action: string = 'create';
-  editApplicationId: number | null = null;
+  editApplicationId: number = 0;
+  editUserId: number = 0;
 
   user: User = {} as User;
 
@@ -47,8 +50,9 @@ export class ApplicationForm {
   sendingExams: Exam[] = [];
   hostExams: Exam[] = [];
 
-  examPairs: ExamPair[] = [{ local_exam_id: 0, host_exam_id: 0 }];
+  examPairs: ExamPair[] = [{ local_exam_id: 0,  host_exam_id: 0 }];
   selectedFile: File | null = null;
+  existingDocument: UploadedDocument | null = null;
 
   isSubmitting = false;
   submitError = '';
@@ -63,22 +67,33 @@ export class ApplicationForm {
       this.user = JSON.parse(userData);
     }
 
-    const state = history.state;
-    if (state?.mode === 'edit' && state?.application) {
-      this.action = 'edit';
-      const app = state.application;
-      this.editApplicationId = app.id;
-      this.year = app.year;
-      this.semester = app.semester;
-      this.host_institution_id = app.host_institution;
-      this.referent_id = app.referent_id ?? 0;
-      this.notes = app.notes ?? '';
-      this.start_date = app.date_arrived ?? '';
-      this.end_date = app.date_departure ?? '';
+    if(isPlatformBrowser(this.platformId)) {
+      const state = history.state;
+      if (state?.mode === 'edit' && state?.application) {
+        this.action = 'edit';
+        const app = state.application;
+        this.editApplicationId = app.id;
+        this.editUserId = app.user_id;
+        this.year = app.year;
+        this.semester = app.semester;
+        this.host_institution_id = app.host_institution;
+        this.referent_id = app.referent_id ?? 0;
+        this.notes = app.notes ?? '';
+        this.start_date = app.date_arrived ?? '';
+        this.end_date = app.date_departure ?? '';
+      }
+      this.cdr.markForCheck();
     }
 
-    this.applicationsApi.getSemesters().subscribe({ next: res => this.semesters = res });
-    this.applicationsApi.getAcademicYears().subscribe({ next: res => this.academic_years = res });
+
+    this.applicationsApi.getSemesters().subscribe({
+      next: res => this.semesters = res,
+      complete : () => { this.cdr.markForCheck(); }
+    });
+    this.applicationsApi.getAcademicYears().subscribe({
+      next: res => this.academic_years = res,
+      complete : () => { this.cdr.markForCheck(); }
+    });
   }
 
   ngAfterViewInit() {
@@ -87,23 +102,53 @@ export class ApplicationForm {
 
     this.institutionsApi.getInstitutionPartners(id).subscribe({
       next: res => this.institutions = res,
-      error: err => console.error(err)
+      error: err => console.error(err),
+      complete : () => { this.cdr.markForCheck(); }
     });
 
     this.institutionsApi.getInstitutionReferents(id).subscribe({
       next: res => this.referents = res,
-      error: err => console.error(err)
+      error: err => console.error(err),
+      complete : () => { this.cdr.markForCheck(); }
     });
 
     this.examsApi.listExamsByInstitution(id).subscribe({
       next: res => this.sendingExams = res,
-      error: err => console.error(err)
+      error: err => console.error(err),
+      complete : () => { this.cdr.markForCheck(); }
     });
 
     if (this.action === 'edit' && this.host_institution_id > 0) {
-      this.examsApi.listExamsByInstitution(this.host_institution_id).subscribe({
-        next: res => this.hostExams = res,
-        error: err => console.error(err)
+      // update user data
+      this.usersApi.getUser(this.editUserId).subscribe({
+        next: res => this.user = res,
+        error: err => console.error(err),
+      complete : () => { this.cdr.markForCheck(); }
+      })
+
+      // get exam mappings
+      this.applicationsApi.listApplicationExamMappings(this.host_institution_id).subscribe({
+        next: res => {
+          this.onHostInstitutionChange();
+          this.examPairs = [];
+          for(let exam_map of res) {
+            this.examPairs.push({ local_exam_id: exam_map.sending_exam_id, host_exam_id: exam_map.host_exam_id })
+          }
+        },
+        error: err => {
+          console.error(err)
+        },
+        complete : () => { this.cdr.markForCheck(); }
+      });
+
+      // get selectedFile
+      this.applicationsApi.listApplicationDocuments(this.editApplicationId).subscribe({
+        next: res => {
+          const la = res.find(d => d.document_type === 'learning_agreement');
+          if (la) this.existingDocument = la;
+        },
+        error : err => console.error(err),
+        complete: () => { this.cdr.markForCheck(); }
       });
     }
   }
@@ -114,7 +159,8 @@ export class ApplicationForm {
     if (this.host_institution_id > 0) {
       this.examsApi.listExamsByInstitution(this.host_institution_id).subscribe({
         next: res => this.hostExams = res,
-        error: err => console.error(err)
+        error: err => console.error(err),
+        complete : () => { this.cdr.markForCheck(); }
       });
     }
   }
