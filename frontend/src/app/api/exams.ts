@@ -104,3 +104,16 @@ export interface MappedExamPassedBody {
   grade?: number;
   date_passed?: string | null;
 }
+
+export interface MappedExamRow {
+  id: number;
+  application_id: number;
+  date_passed: string | null;
+  grade: number;
+  status: string;
+  decision_date: string | null;
+  notes: string;
+  previous_id: number;
+  host_exam_id: number;
+  sending_exam_id: number;
+}
