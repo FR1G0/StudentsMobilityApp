@@ -1,0 +1,62 @@
+# docker-compose.yml
+
+services:
+
+  # 1. Database (postgres) 
+  database:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    image: overseas-db
+    container_name: overseas-db-container
+    networks:
+      - overseas-network
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    # healthcheck
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d overseas_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # 2. Backend (expressjs) 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: overseas-backend
+    container_name: overseas-backend-container
+    networks:
+      - overseas-network
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://myuser:123@overseas-db-container:5432/overseas_db
+      - SECRET_KEY=${SECRET_KEY:-supersecret}
+      - JWT_SECRET=${JWT_SECRET:-}
+    depends_on:
+      database:
+        condition: service_healthy
+
+  # 3. Frontend (angularjs) 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: overseas-frontend
+    container_name: overseas-frontend-container
+    networks:
+      - overseas-network
+    ports:
+      - "4200:4200"
+    depends_on:
+      - backend
+
+networks:
+  overseas-network:
+
+volumes:
+  db_data:
