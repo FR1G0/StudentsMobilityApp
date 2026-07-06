@@ -1,5 +1,6 @@
 // file database handling
-const pgp = require('pg-promise')();
-const db = pgp('postgres://username:password@localhost:5432/mydatabase');
+import pgPromise from 'pg-promise';
+const pgp = pgPromise({})
+const db = pgp('postgresql://myuser:123@localhost:5432/overseas_db');
 
-module.exports = db;
+export default db;
