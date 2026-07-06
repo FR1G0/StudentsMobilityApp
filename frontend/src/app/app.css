@@ -1,0 +1,15 @@
+/* notification fade-in: subtle slide down + fade, nothing excessive */
+@keyframes notification-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notification-enter {
+  animation: notification-fade-in 0.2s ease-out;
+}

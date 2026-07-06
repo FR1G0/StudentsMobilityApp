@@ -1,0 +1,94 @@
+<!-- title -->
+<div class="w-full">
+  <h1 class="text-xl font-bold text-white">Manage Partners</h1>
+</div>
+
+<!-- Section: add a new partnership -->
+<div class="bg-bg-surface border border-border-subtle rounded-lg p-6 mt-4">
+  <form (ngSubmit)="addPartnership()">
+    <fieldset class="mb-6">
+      <legend class="flex items-center gap-2 text-[0.6rem] text-text-muted uppercase tracking-widest mb-3">
+        <span class="mdi mdi-handshake-outline text-sm"></span>
+        New Partnership
+      </legend>
+
+      <div class="flex flex-col gap-1">
+        <label for="partner" class="text-[0.7rem] text-text-secondary">Partner Institution <span class="text-red-500/70">*</span></label>
+        <div class="relative">
+          <span class="mdi mdi-school-outline absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
+          <select
+            [(ngModel)]="selectedPartnerId"
+            id="partner"
+            name="partner"
+            class="w-full appearance-none bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded pl-8 pr-8 py-2 text-[0.8rem] text-text-primary transition-colors duration-150 cursor-pointer">
+            <option [ngValue]="0" disabled class="text-text-disabled">Select Institution</option>
+            @for (institution of institutions; track institution.id) {
+              <option [ngValue]="institution.id">{{ institution.name }} — {{ institution.city }}, {{ institution.country }}</option>
+            }
+          </select>
+          <span class="mdi mdi-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="flex justify-end pt-4 border-t border-border-subtle">
+      <button
+        type="submit"
+        class="flex items-center gap-1.5 px-4 py-2 rounded text-[0.7rem] font-medium bg-[#1a2a3a] border border-[#2e4a6e] text-[#7ab0e0] hover:bg-[#1e3248] hover:border-[#3d6090] transition-all duration-150"
+      >
+        <span class="mdi mdi-handshake-outline text-sm"></span>
+        Submit
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Section: partnered institutions list -->
+<div class="bg-bg-surface border border-border-subtle rounded-lg p-6 mt-4">
+  <fieldset>
+    <legend class="flex items-center gap-2 text-[0.6rem] text-text-muted uppercase tracking-widest mb-3">
+      <span class="mdi mdi-office-building-outline text-sm"></span>
+      Partnered Institutions
+    </legend>
+
+    <!-- Loading state -->
+    @if (isLoading) {
+      <div class="flex items-center justify-center py-12 text-text-muted">
+        <span class="mdi mdi-loading mdi-spin text-xl mr-2"></span>
+        <p class="text-[0.7rem]">Loading partnerships...</p>
+      </div>
+    }
+
+    @if (!isLoading) {
+      <!-- column labels -->
+      <div class="grid grid-cols-12 gap-2 px-4 mb-2">
+        <p class="col-span-1 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">ID</p>
+        <p class="col-span-5 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Name</p>
+        <p class="col-span-4 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">City</p>
+        <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium text-right">Action</p>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        @for (partner of partners; track partner.partner_row_id) {
+          <div class="grid grid-cols-12 gap-2 items-center px-4 py-3 border border-border-subtle rounded bg-bg-base hover:bg-bg-raised transition-colors duration-100">
+            <p class="col-span-1 text-[0.7rem] text-text-muted font-mono tabular-nums">#{{ partner.id_partner_institution }}</p>
+            <p class="col-span-5 text-[0.8rem] text-text-primary truncate">{{ partner.name }}</p>
+            <p class="col-span-4 text-[0.7rem] text-text-secondary truncate">{{ partner.city }}</p>
+            <div class="col-span-2 flex justify-end">
+              <button
+                type="button"
+                (click)="removePartnership(partner)"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded text-[0.7rem] font-medium bg-[#261013] border border-[#5e1a22] text-[#d4574d] hover:bg-[#2e141a] transition-all duration-150"
+              >
+                <span class="mdi mdi-trash-can-outline text-sm"></span>
+                Remove
+              </button>
+            </div>
+          </div>
+        } @empty {
+          <p class="text-[0.7rem] text-text-muted italic">No partnerships found.</p>
+        }
+      </div>
+    }
+  </fieldset>
+</div>

@@ -4,9 +4,37 @@
 
 <div class="bg-bg-surface border border-border-subtle rounded-lg p-6 mt-4">
   <form (ngSubmit)="submitApplication()">
-    <div class="mb-6 pb-4 border-b border-border-subtle">
-      <p class="text-[0.6rem] text-text-muted uppercase tracking-[0.2em] mb-0.5">Erasmus</p>
-      <h2 class="text-[1rem] font-semibold text-text-primary">{{ action === 'edit' ? 'Edit' : 'New' }} Mobility Application</h2>
+    <div class="mb-6 pb-4 border-b border-border-subtle flex items-start justify-between gap-3">
+      <div>
+        <p class="text-[0.6rem] text-text-muted uppercase tracking-[0.2em] mb-0.5">Erasmus</p>
+        <h2 class="text-[1rem] font-semibold text-text-primary">{{ action === 'edit' ? 'Edit' : 'New' }} Mobility Application</h2>
+      </div>
+
+      @if (action === 'edit') {
+        <span
+          class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[0.6rem] font-medium uppercase tracking-wider border shrink-0"
+          [ngClass]="{
+            'bg-[#1f1f1f] border-[#3d3d3d] text-[#7a7a7a]':   status === 'created',
+            'bg-[#261f10] border-[#5e4a1a] text-[#c9a040]':   status === 'learning_agreement_pending',
+            'bg-[#101e26] border-[#1a3d52] text-[#4da8d4]':   status === 'pre_departure_completed',
+            'bg-[#101826] border-[#1a2e52] text-[#4d78d4]':   status === 'mobility_ongoing',
+            'bg-[#1a1026] border-[#3d1a52] text-[#a04dd4]':   status === 'exam_recognition',
+            'bg-[#101e14] border-[#1a4022] text-[#4db864]':   status === 'closed'
+          }" >
+          <span
+            class="w-1 h-1 rounded-full"
+            [ngClass]="{
+              'bg-[#7a7a7a]': status === 'created',
+              'bg-[#c9a040]': status === 'learning_agreement_pending',
+              'bg-[#4da8d4]': status === 'pre_departure_completed',
+              'bg-[#4d78d4]': status === 'mobility_ongoing',
+              'bg-[#a04dd4]': status === 'exam_recognition',
+              'bg-[#4db864]': status === 'closed'
+            }"
+          ></span>
+          {{ shortenStatus(status) }}
+        </span>
+      }
     </div>
 
     <!-- Section: Dati Studente -->
@@ -71,6 +99,7 @@
               [(ngModel)]="year"
               id="academic-year"
               name="academicYear"
+              [disabled]="coreFieldsLocked()"
               class="w-full appearance-none bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 pr-8 text-[0.8rem] text-text-primary transition-colors duration-150 cursor-pointer">
               <option [ngValue]="0" disabled class="text-text-disabled">Select Year</option>
               @for (y of academic_years; track y) {
@@ -88,6 +117,7 @@
               [(ngModel)]="semester"
               id="semester"
               name="semester"
+              [disabled]="coreFieldsLocked()"
               class="w-full appearance-none bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 pr-8 text-[0.8rem] text-text-primary transition-colors duration-150 cursor-pointer">
               <option value="" disabled class="text-text-disabled">Select Semester</option>
               @for (s of semesters; track s) {
@@ -107,6 +137,7 @@
               id="host-institution"
               name="hostInstitution"
               (change)="onHostInstitutionChange()"
+              [disabled]="coreFieldsLocked()"
               class="w-full appearance-none bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded pl-8 pr-8 py-2 text-[0.8rem] text-text-primary transition-colors duration-150 cursor-pointer">
               <option [ngValue]="0" disabled class="text-text-disabled">Select Institution</option>
               @for (institution of institutions; track institution.partner_row_id) {
@@ -121,11 +152,13 @@
           <label for="date-start" class="text-[0.7rem] text-text-secondary">Start Date</label>
           <div class="relative">
             <span class="mdi mdi-calendar-start absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
+            <!-- both dates are editable only while 'mobility_ongoing' -->
             <input
               [(ngModel)]="start_date"
               id="date-start"
               name="dateStart"
               type="date"
+              [disabled]="startDateLocked()"
               class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded pl-8 pr-3 py-2 text-[0.8rem] text-text-primary transition-colors duration-150 [color-scheme:dark]"
             />
           </div>
@@ -135,11 +168,13 @@
           <label for="date-end" class="text-[0.7rem] text-text-secondary">End Date</label>
           <div class="relative">
             <span class="mdi mdi-calendar-end absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
+            <!-- both dates stay editable while 'mobility_ongoing' -->
             <input
               [(ngModel)]="end_date"
               id="date-end"
               name="dateEnd"
               type="date"
+              [disabled]="endDateLocked()"
               class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded pl-8 pr-3 py-2 text-[0.8rem] text-text-primary transition-colors duration-150 [color-scheme:dark]"
             />
           </div>
@@ -153,6 +188,7 @@
               [(ngModel)]="referent_id"
               id="referent"
               name="referentLecturer"
+              [disabled]="coreFieldsLocked()"
               class="w-full appearance-none bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded pl-8 pr-8 py-2 text-[0.8rem] text-text-primary transition-colors duration-150 cursor-pointer">
               <option [ngValue]="0" disabled>Select a referent</option>
               @for (referent of referents; track referent.id) {
@@ -163,16 +199,16 @@
           </div>
         </div>
 
-        @if(notes != '') {
+        @if(notesEditable() || notes != '') {
         <div class="flex flex-col gap-1 col-span-2">
           <label for="notes" class="text-[0.7rem] text-text-secondary">Notes</label>
           <textarea
             [(ngModel)]="notes"
             id="notes"
             name="notes"
-            [disabled]="user.role=='student'"
+            [disabled]="!notesEditable()"
             rows="3"
-            placeholder="Additional notes by referent ..."
+            placeholder="Add notes for this application ..."
             class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 text-[0.8rem] text-text-primary placeholder:text-text-disabled transition-colors duration-150 resize-none"
           ></textarea>
         </div>
@@ -201,6 +237,7 @@
                 <select
                   [(ngModel)]="pair.local_exam_id"
                   [name]="'localExam_' + i"
+                  [disabled]="examPairsLocked()"
                   class="w-full appearance-none bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 pr-8 text-[0.8rem] text-text-primary transition-colors duration-150 cursor-pointer">
                   <option [ngValue]="0" disabled class="text-text-disabled">Local exam</option>
                   @for (exam of sendingExams; track exam.id) {
@@ -218,6 +255,7 @@
                 <select
                   [(ngModel)]="pair.host_exam_id"
                   [name]="'hostExam_' + i"
+                  [disabled]="examPairsLocked()"
                   class="w-full appearance-none bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 pr-8 text-[0.8rem] text-text-primary transition-colors duration-150 cursor-pointer">
                   <option [ngValue]="0" disabled class="text-text-disabled">Host exam</option>
                   @for (exam of hostExams; track exam.id) {
@@ -231,7 +269,7 @@
                 <button
                   type="button"
                   (click)="removeExamPair(i)"
-                  [disabled]="examPairs.length === 1"
+                  [disabled]="examPairs.length === 1 || examPairsLocked()"
                   class="w-7 h-7 flex items-center justify-center rounded text-text-disabled hover:text-red-400/80 hover:bg-red-500/10 transition-all duration-100 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-text-disabled"
                 >
                   <span class="mdi mdi-close text-base"></span>
@@ -239,19 +277,104 @@
               </div>
 
             </div>
+
+            @if (pair.status === 'rejected' && pair.notes) {
+              <p class="text-[0.7rem] text-red-400/80">rejected: {{ pair.notes }}</p>
+            }
+
+            <!-- exam_recognition: the student fills in the result of each exam -->
+            @if (action === 'edit' && status === 'exam_recognition' && pair.mapping_id) {
+              <div class="grid grid-cols-2 gap-2 mb-1">
+                <div class="flex flex-col gap-1">
+                  <label class="text-[0.7rem] text-text-secondary">Grade (18-30)</label>
+                  <input
+                    [(ngModel)]="pair.grade"
+                    [name]="'grade_' + i"
+                    type="number"
+                    min="18"
+                    max="30"
+                    [disabled]="examResultLocked(pair)"
+                    class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 text-[0.8rem] text-text-primary transition-colors duration-150 [color-scheme:dark] disabled:opacity-50"
+                  />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-[0.7rem] text-text-secondary">Date Passed</label>
+                  <input
+                    [(ngModel)]="pair.date_passed"
+                    [name]="'datePassed_' + i"
+                    type="date"
+                    [disabled]="examResultLocked(pair)"
+                    class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 text-[0.8rem] text-text-primary transition-colors duration-150 [color-scheme:dark] disabled:opacity-50"
+                  />
+                </div>
+              </div>
+            }
+          }
+          @if (action === 'edit' && status === 'exam_recognition' && !existingTranscript) {
+            <small class="text-red-500 text-xs">uploaded transcript of records required before updating grade</small>
           }
         </div>
 
-        <button
-          type="button"
-          (click)="addExamPair()"
-          class="mt-3 flex items-center gap-1.5 text-[0.7rem] text-text-muted hover:text-text-secondary border border-dashed border-border-default hover:border-border-strong rounded px-3 py-1.5 w-full justify-center transition-all duration-150"
-        >
-          <span class="mdi mdi-plus text-base"></span>
-          Add Exam
-        </button>
+        @if (!examPairsLocked()) {
+          <button
+            type="button"
+            (click)="addExamPair()"
+            class="mt-3 flex items-center gap-1.5 text-[0.7rem] text-text-muted hover:text-text-secondary border border-dashed border-border-default hover:border-border-strong rounded px-3 py-1.5 w-full justify-center transition-all duration-150"
+          >
+            <span class="mdi mdi-plus text-base"></span>
+            Add Exam
+          </button>
+        }
+
+        <!-- mobility_ongoing: describe here the proposed LA modification -->
+        @if (action === 'edit' && status === 'mobility_ongoing') {
+          <div class="flex flex-col gap-1 mt-4">
+            <label for="modification-description" class="text-[0.7rem] text-text-secondary">Modification Description <span class="text-red-500/70">*</span></label>
+            <textarea
+              [(ngModel)]="modificationDescription"
+              id="modification-description"
+              name="modificationDescription"
+              rows="3"
+              placeholder="Describe the proposed changes to the exam mapping ..."
+              class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 text-[0.8rem] text-text-primary placeholder:text-text-disabled transition-colors duration-150 resize-none"
+            ></textarea>
+            <p class="text-[0.65rem] text-text-muted">Adjust the mapping above, describe the change, then press "Submit Modification".</p>
+          </div>
+        }
       }
     </fieldset>
+
+    <!-- Section: proposed LA modifications and their outcome -->
+    @if (action === 'edit' && modifications.length > 0) {
+      <div class="h-px bg-border-subtle mb-6"></div>
+      <fieldset class="mb-6">
+        <legend class="flex items-center gap-2 text-[0.6rem] text-text-muted uppercase tracking-widest mb-3">
+          <span class="mdi mdi-file-swap-outline text-sm"></span>
+          LA Modifications
+        </legend>
+        <div class="flex flex-col gap-2">
+          @for (mod of modifications; track mod.id) {
+            <div class="border border-border-subtle rounded p-3 bg-bg-base">
+              <div class="flex items-start justify-between gap-2">
+                <p class="text-[0.8rem] text-text-primary flex-1">{{ mod.description }}</p>
+                <span
+                  class="inline-flex items-center px-2 py-0.5 rounded text-[0.6rem] font-medium uppercase tracking-wider border shrink-0"
+                  [ngClass]="{
+                    'bg-[#261f10] border-[#5e4a1a] text-[#c9a040]': mod.status === 'pending',
+                    'bg-[#101e14] border-[#1a4022] text-[#4db864]': mod.status === 'approved',
+                    'bg-[#261013] border-[#5e1a22] text-[#d4574d]': mod.status === 'rejected'
+                  }">
+                  {{ mod.status }}
+                </span>
+              </div>
+              @if (mod.status === 'rejected' && mod.notes) {
+                <p class="mt-2 text-[0.7rem] text-red-400/80">rejected: {{ mod.notes }}</p>
+              }
+            </div>
+          }
+        </div>
+      </fieldset>
+    }
 
     <div class="h-px bg-border-subtle mb-6"></div>
 
@@ -279,23 +402,39 @@
           </button>
         </div>
       } @else if (existingDocument) {
-        <!-- already uploaded document (edit mode) -->
+        <!-- already uploaded document (edit mode), click to download -->
         <div class="flex items-center gap-3 px-4 py-3 bg-bg-raised border border-border-default rounded">
-          <span class="mdi mdi-file-check-outline text-green-400/80 text-xl shrink-0"></span>
-          <div class="flex flex-col min-w-0 flex-1">
-            <span class="text-[0.8rem] text-text-primary truncate">{{ existingDocument.file_path.split('/').pop() }}</span>
-            <span class="text-[0.65rem] text-text-muted">Already uploaded · {{ existingDocument.status }}</span>
-          </div>
-          <label
-            for="la-upload"
-            class="flex items-center gap-1 px-2.5 py-1 rounded text-[0.65rem] text-text-secondary border border-border-default hover:border-border-strong hover:bg-bg-overlay cursor-pointer transition-all duration-100 shrink-0"
+          <span
+            class="mdi text-xl shrink-0"
+            [ngClass]="{
+              'mdi-file-clock-outline text-[#c9a040]':           existingDocument.status === 'pending',
+              'mdi-file-check-outline text-green-400/80':         existingDocument.status === 'approved',
+              'mdi-file-document-remove-outline text-red-400/80': existingDocument.status === 'rejected'
+            }"
+          ></span>
+          <button
+            type="button"
+            (click)="downloadDocument(existingDocument)"
+            class="group flex items-center gap-2 min-w-0 flex-1 text-left"
           >
-            <span class="mdi mdi-swap-horizontal text-xs"></span>
-            Replace
-          </label>
+            <div class="flex flex-col min-w-0 flex-1">
+              <span class="text-[0.8rem] text-text-primary truncate group-hover:text-blue-400/80 transition-colors duration-100">{{ existingDocument.file_path.split('/').pop() }}</span>
+              <span class="text-[0.65rem] text-text-muted">Already uploaded · {{ existingDocument.status }} · click to download</span>
+            </div>
+            <span class="mdi mdi-download text-text-muted group-hover:text-blue-400/80 text-base shrink-0 transition-colors duration-100"></span>
+          </button>
+          @if (!learningAgreementLocked()) {
+            <label
+              for="la-upload"
+              class="flex items-center gap-1 px-2.5 py-1 rounded text-[0.65rem] text-text-secondary border border-border-default hover:border-border-strong hover:bg-bg-overlay cursor-pointer transition-all duration-100 shrink-0"
+            >
+              <span class="mdi mdi-swap-horizontal text-xs"></span>
+              Replace
+            </label>
+          }
           <input id="la-upload" name="learningAgreement" type="file" accept=".pdf" class="sr-only" (change)="onFileSelected($event)" />
         </div>
-      } @else {
+      } @else if (!learningAgreementLocked()) {
         <!-- no file yet -->
         <label
           for="la-upload"
@@ -308,16 +447,106 @@
           </div>
           <input id="la-upload" name="learningAgreement" type="file" accept=".pdf" class="sr-only" (change)="onFileSelected($event)" />
         </label>
+      } @else {
+        <p class="text-[0.7rem] text-text-muted italic">No learning agreement uploaded.</p>
+      }
+
+      @if (existingDocument && existingDocument.status === 'rejected' && existingDocument.notes) {
+        <p class="text-[0.7rem] text-red-400/80 mt-2">rejected: {{ existingDocument.notes }}</p>
       }
 
     </fieldset>
+
+    <!-- Section: Transcript of Records (edit mode, click to download) -->
+    @if (action === 'edit' && existingTranscript) {
+      <fieldset class="mb-8">
+        <legend class="flex items-center gap-2 text-[0.6rem] text-text-muted uppercase tracking-widest mb-3">
+          <span class="mdi mdi-file-document-outline text-sm"></span>
+          Transcript of Records
+        </legend>
+        <div class="flex items-center gap-3 px-4 py-3 bg-bg-raised border border-border-default rounded">
+          <span
+            class="mdi text-xl shrink-0"
+            [ngClass]="{
+              'mdi-file-clock-outline text-[#c9a040]':           existingTranscript.status === 'pending',
+              'mdi-file-check-outline text-green-400/80':         existingTranscript.status === 'approved',
+              'mdi-file-document-remove-outline text-red-400/80': existingTranscript.status === 'rejected'
+            }"
+          ></span>
+          <button
+            type="button"
+            (click)="downloadDocument(existingTranscript)"
+            class="group flex items-center gap-2 min-w-0 flex-1 text-left"
+          >
+            <div class="flex flex-col min-w-0 flex-1">
+              <span class="text-[0.8rem] text-text-primary truncate group-hover:text-blue-400/80 transition-colors duration-100">{{ existingTranscript.file_path.split('/').pop() }}</span>
+              <span class="text-[0.65rem] text-text-muted">Already uploaded · {{ existingTranscript.status }} · click to download</span>
+            </div>
+            <span class="mdi mdi-download text-text-muted group-hover:text-blue-400/80 text-base shrink-0 transition-colors duration-100"></span>
+          </button>
+        </div>
+      </fieldset>
+    }
+
+    <!-- Section: Transcript upload (student, exam_recognition, no transcript yet) -->
+    @if (action === 'edit' && user.role === 'student' && status === 'exam_recognition' && !existingTranscript) {
+      <fieldset class="mb-8">
+        <legend class="flex items-center gap-2 text-[0.6rem] text-text-muted uppercase tracking-widest mb-3">
+          <span class="mdi mdi-file-document-outline text-sm"></span>
+          Transcript of Records
+        </legend>
+
+        @if (transcriptFile) {
+          <div class="flex items-center gap-3 px-4 py-3 bg-bg-raised border border-border-default rounded mb-3">
+            <span class="mdi mdi-file-pdf-box text-red-400 text-xl shrink-0"></span>
+            <div class="flex flex-col min-w-0 flex-1">
+              <span class="text-[0.8rem] text-text-primary truncate">{{ transcriptFile.name }}</span>
+              <span class="text-[0.65rem] text-text-muted">{{ formatFileSize(transcriptFile.size) }}</span>
+            </div>
+          </div>
+        } @else {
+          <label
+            for="tor-upload"
+            class="flex flex-col items-center justify-center gap-2 w-full py-8 border border-dashed border-border-default hover:border-border-strong bg-bg-base hover:bg-bg-raised rounded cursor-pointer transition-all duration-150 group mb-3"
+          >
+            <span class="mdi mdi-upload text-2xl text-text-muted group-hover:text-text-secondary transition-colors duration-150"></span>
+            <div class="text-center">
+              <p class="text-[0.8rem] text-text-secondary">Drag the file here, or <span class="text-blue-400/80">click here to select</span></p>
+              <p class="text-[0.65rem] text-text-muted mt-0.5">Only PDF · Max 10 MB</p>
+            </div>
+          </label>
+        }
+        <input id="tor-upload" name="transcript" type="file" accept=".pdf" class="sr-only" (change)="onTranscriptSelected($event)" />
+
+        <button
+          type="button"
+          (click)="uploadTranscript()"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded text-[0.7rem] font-medium bg-[#101e14] border border-[#1a4022] text-[#4db864] hover:bg-[#13261a] transition-all duration-150"
+        >
+          <span class="mdi mdi-upload text-sm"></span>
+          Upload Transcript
+        </button>
+      </fieldset>
+    }
 
     @if (submitError) {
       <p class="text-[0.75rem] text-red-400/80 mb-4">{{ submitError }}</p>
     }
 
     <div class="flex items-center justify-between pt-4 border-t border-border-subtle">
-      <div></div>
+      <div>
+        <!-- mobility_ongoing: the student can end the mobility from here -->
+        @if (action === 'edit' && user.role === 'student' && status === 'mobility_ongoing') {
+          <button
+            type="button"
+            (click)="endMobility()"
+            class="flex items-center gap-1.5 px-4 py-2 rounded text-[0.7rem] font-medium bg-[#1a1026] border border-[#3d1a52] text-[#a04dd4] hover:bg-[#20143a] transition-all duration-150"
+          >
+            <span class="mdi mdi-flag-checkered text-sm"></span>
+            End Mobility
+          </button>
+        }
+      </div>
       <div class="flex items-center gap-2">
         <button
           type="button"
@@ -326,19 +555,32 @@
         >
           Cancel
         </button>
-        <button
-          type="submit"
-          [disabled]="isSubmitting"
-          class="flex items-center gap-1.5 px-4 py-2 rounded text-[0.7rem] font-medium bg-[#1a2a3a] border border-[#2e4a6e] text-[#7ab0e0] hover:bg-[#1e3248] hover:border-[#3d6090] transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          @if (isSubmitting) {
-            <span class="mdi mdi-loading mdi-spin text-sm"></span>
-            Submitting...
-          } @else {
-            <span class="mdi mdi-send-outline text-sm"></span>
-            {{ action === 'edit' ? 'Save Changes' : 'Submit Application' }}
-          }
-        </button>
+        <!-- the submit button is replaced by the start mobility action; during the
+             mobility it submits the LA modification, then the exam results -->
+        @if (action === 'edit' && user.role === 'student' && status === 'pre_departure_completed') {
+          <button
+            type="button"
+            (click)="startMobility()"
+            class="flex items-center gap-1.5 px-4 py-2 rounded text-[0.7rem] font-medium bg-[#101826] border border-[#1a2e52] text-[#4d78d4] hover:bg-[#13203a] transition-all duration-150"
+          >
+            <span class="mdi mdi-airplane-takeoff text-sm"></span>
+            Start Mobility
+          </button>
+        } @else {
+          <button
+            type="submit"
+            [disabled]="isSubmitting"
+            class="flex items-center gap-1.5 px-4 py-2 rounded text-[0.7rem] font-medium bg-[#1a2a3a] border border-[#2e4a6e] text-[#7ab0e0] hover:bg-[#1e3248] hover:border-[#3d6090] transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            @if (isSubmitting) {
+              <span class="mdi mdi-loading mdi-spin text-sm"></span>
+              Submitting...
+            } @else {
+              <span class="mdi mdi-send-outline text-sm"></span>
+              {{ submitLabel() }}
+            }
+          </button>
+        }
       </div>
     </div>
 

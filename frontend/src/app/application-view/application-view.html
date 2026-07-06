@@ -1,0 +1,499 @@
+<div class="w-full flex items-center justify-between">
+  <h1 class="text-xl font-bold text-white">View Application</h1>
+  <button
+    type="button"
+    (click)="cancel()"
+    class="flex items-center gap-1.5 px-3 py-1.5 rounded text-[0.7rem] text-text-secondary border border-border-default hover:border-border-strong hover:bg-bg-raised transition-all duration-150"
+  >
+    <span class="mdi mdi-arrow-left text-sm"></span>
+    Back
+  </button>
+</div>
+
+<div class="bg-bg-surface border border-border-subtle rounded-lg p-6 mt-4">
+
+  <!-- Header with current application status -->
+  <div class="mb-6 pb-4 border-b border-border-subtle flex items-start justify-between gap-3">
+    <div>
+      <p class="text-[0.6rem] text-text-muted uppercase tracking-[0.2em] mb-0.5">Erasmus</p>
+      <h2 class="text-[1rem] font-semibold text-text-primary">Mobility Application #{{ application.id }}</h2>
+    </div>
+
+    <span
+      class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[0.6rem] font-medium uppercase tracking-wider border shrink-0"
+      [ngClass]="{
+        'bg-[#1f1f1f] border-[#3d3d3d] text-[#7a7a7a]':   application.status === 'created',
+        'bg-[#261f10] border-[#5e4a1a] text-[#c9a040]':   application.status === 'learning_agreement_pending',
+        'bg-[#101e26] border-[#1a3d52] text-[#4da8d4]':   application.status === 'pre_departure_completed',
+        'bg-[#101826] border-[#1a2e52] text-[#4d78d4]':   application.status === 'mobility_ongoing',
+        'bg-[#1a1026] border-[#3d1a52] text-[#a04dd4]':   application.status === 'exam_recognition',
+        'bg-[#101e14] border-[#1a4022] text-[#4db864]':   application.status === 'closed'
+      }" >
+      <span
+        class="w-1 h-1 rounded-full"
+        [ngClass]="{
+          'bg-[#7a7a7a]': application.status === 'created',
+          'bg-[#c9a040]': application.status === 'learning_agreement_pending',
+          'bg-[#4da8d4]': application.status === 'pre_departure_completed',
+          'bg-[#4d78d4]': application.status === 'mobility_ongoing',
+          'bg-[#a04dd4]': application.status === 'exam_recognition',
+          'bg-[#4db864]': application.status === 'closed'
+        }"
+      ></span>
+      {{ shortenStatus(application.status) }}
+    </span>
+  </div>
+
+  <!-- Section: Dati Studente (read-only) -->
+  <fieldset class="mb-6">
+    <legend class="flex items-center gap-2 text-[0.6rem] text-text-muted uppercase tracking-widest mb-3">
+      <span class="mdi mdi-account-outline text-sm"></span>
+      Dati Studente
+    </legend>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label class="text-[0.7rem] text-text-secondary">Name</label>
+        <input [value]="student.firstname" type="text" readonly
+          class="bg-bg-base border border-border-subtle rounded px-3 py-2 text-[0.8rem] text-text-muted cursor-default" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-[0.7rem] text-text-secondary">Surname</label>
+        <input [value]="student.lastname" type="text" readonly
+          class="bg-bg-base border border-border-subtle rounded px-3 py-2 text-[0.8rem] text-text-muted cursor-default" />
+      </div>
+      <div class="flex flex-col gap-1 col-span-2">
+        <label class="text-[0.7rem] text-text-secondary">Email Address</label>
+        <div class="relative">
+          <span class="mdi mdi-email-outline absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
+          <input [value]="student.email" type="email" readonly
+            class="w-full bg-bg-base border border-border-subtle rounded pl-8 pr-3 py-2 text-[0.8rem] text-text-muted cursor-default" />
+        </div>
+      </div>
+    </div>
+  </fieldset>
+  <div class="h-px bg-border-subtle mb-6"></div>
+
+  <!-- Section: Mobility Data (read-only) -->
+  <fieldset class="mb-6">
+    <legend class="flex items-center gap-2 text-[0.6rem] text-text-muted uppercase tracking-widest mb-3">
+      <span class="mdi mdi-airplane-takeoff text-sm"></span>
+      Mobility Data
+    </legend>
+    <div class="grid grid-cols-2 gap-3">
+
+      <div class="flex flex-col gap-1">
+        <label class="text-[0.7rem] text-text-secondary">Academic Year</label>
+        <input [value]="formatYear(application.year)" type="text" readonly
+          class="bg-bg-base border border-border-subtle rounded px-3 py-2 text-[0.8rem] text-text-muted cursor-default" />
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-[0.7rem] text-text-secondary">Semester</label>
+        <input [value]="application.semester" type="text" readonly
+          class="bg-bg-base border border-border-subtle rounded px-3 py-2 text-[0.8rem] text-text-muted cursor-default capitalize" />
+      </div>
+
+      <div class="flex flex-col gap-1 col-span-2">
+        <label class="text-[0.7rem] text-text-secondary">Host Institution</label>
+        <div class="relative">
+          <span class="mdi mdi-school-outline absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
+          <input [value]="hostInstitutionName" type="text" readonly
+            class="w-full bg-bg-base border border-border-subtle rounded pl-8 pr-3 py-2 text-[0.8rem] text-text-muted cursor-default" />
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-[0.7rem] text-text-secondary">Start Date</label>
+        <div class="relative">
+          <span class="mdi mdi-calendar-start absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
+          <input [value]="application.date_arrived || '—'" type="text" readonly
+            class="w-full bg-bg-base border border-border-subtle rounded pl-8 pr-3 py-2 text-[0.8rem] text-text-muted cursor-default" />
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-[0.7rem] text-text-secondary">End Date</label>
+        <div class="relative">
+          <span class="mdi mdi-calendar-end absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
+          <input [value]="application.date_departure || '—'" type="text" readonly
+            class="w-full bg-bg-base border border-border-subtle rounded pl-8 pr-3 py-2 text-[0.8rem] text-text-muted cursor-default" />
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1 col-span-2">
+        <label class="text-[0.7rem] text-text-secondary">Referent</label>
+        <div class="relative">
+          <span class="mdi mdi-account-tie-outline absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"></span>
+          <input [value]="referentName || '—'" type="text" readonly
+            class="w-full bg-bg-base border border-border-subtle rounded pl-8 pr-3 py-2 text-[0.8rem] text-text-muted cursor-default" />
+        </div>
+      </div>
+
+      <!-- notes are always shown to every role viewing the application -->
+      <div class="flex flex-col gap-1 col-span-2">
+        <label class="text-[0.7rem] text-text-secondary">Notes</label>
+        <textarea readonly rows="3"
+          placeholder="No notes for this application"
+          class="w-full bg-bg-base border border-border-subtle rounded px-3 py-2 text-[0.8rem] text-text-muted cursor-default resize-none placeholder:text-text-disabled">{{ application.notes }}</textarea>
+      </div>
+
+    </div>
+  </fieldset>
+
+  <div class="h-px bg-border-subtle mb-6"></div>
+
+  <!-- Section: Exam Mapping -->
+  <fieldset class="mb-6">
+    <legend class="flex items-center gap-2 text-[0.6rem] text-text-muted uppercase tracking-widest mb-3">
+      <span class="mdi mdi-swap-horizontal text-sm"></span>
+      Exam Mapping
+    </legend>
+
+    @if (mappings.length === 0) {
+      <p class="text-[0.7rem] text-text-muted italic">No exam mappings for this application.</p>
+    } @else {
+      <div class="flex flex-col gap-3">
+        @for (mapping of mappings; track mapping.id) {
+          <div class="border border-border-subtle rounded p-3 bg-bg-base">
+
+            <!-- the mapping itself (read-only): local exam -> host exam + status -->
+            <div class="grid grid-cols-[1fr_24px_1fr_auto] items-center gap-2">
+              <div class="bg-bg-raised border border-border-default rounded px-3 py-2 text-[0.8rem] text-text-primary truncate">
+                {{ examLabel(mapping.sending_exam_id, sendingExams) }}
+              </div>
+              <div class="flex justify-center">
+                <span class="mdi mdi-arrow-right text-text-muted"></span>
+              </div>
+              <div class="bg-bg-raised border border-border-default rounded px-3 py-2 text-[0.8rem] text-text-primary truncate">
+                {{ examLabel(mapping.host_exam_id, hostExams) }}
+              </div>
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded text-[0.6rem] font-medium uppercase tracking-wider border shrink-0"
+                [ngClass]="{
+                  'bg-[#261f10] border-[#5e4a1a] text-[#c9a040]': mapping.status === 'pending',
+                  'bg-[#101e14] border-[#1a4022] text-[#4db864]': mapping.status === 'approved',
+                  'bg-[#261013] border-[#5e1a22] text-[#d4574d]': mapping.status === 'rejected'
+                }">
+                {{ mapping.status }}
+              </span>
+            </div>
+
+            <!-- exam result (read-only): during recognition/after closing every role
+                 can see the recorded grade and date, but nobody edits it here -->
+            @if (application.status === 'exam_recognition' || application.status === 'closed') {
+              <div class="mt-3 grid grid-cols-2 gap-2">
+                <div class="flex flex-col gap-1">
+                  <label class="text-[0.7rem] text-text-secondary">Grade</label>
+                  <input [value]="mapping.grade === -1 ? '—' : mapping.grade" type="text" readonly
+                    class="bg-bg-base border border-border-subtle rounded px-3 py-2 text-[0.8rem] text-text-muted cursor-default" />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-[0.7rem] text-text-secondary">Date Passed</label>
+                  <input [value]="mapping.date_passed || '—'" type="text" readonly
+                    class="bg-bg-base border border-border-subtle rounded px-3 py-2 text-[0.8rem] text-text-muted cursor-default" />
+                </div>
+              </div>
+            }
+
+            <!-- role based: referent decides, student/staff only read the outcome -->
+            @if (user.role === 'referent') {
+              <div class="mt-3 flex flex-col gap-2">
+                <textarea
+                  [(ngModel)]="mappingReason[mapping.id]"
+                  [name]="'mappingReason_' + mapping.id"
+                  rows="2"
+                  placeholder="Reason for rejection (required to reject) ..."
+                  class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 text-[0.8rem] text-text-primary placeholder:text-text-disabled transition-colors duration-150 resize-none"
+                ></textarea>
+                <div class="flex items-center gap-2 justify-end">
+                  <button
+                    type="button"
+                    (click)="approveMapping(mapping)"
+                    class="flex items-center gap-1 px-3 py-1.5 rounded text-[0.65rem] font-medium bg-[#101e14] border border-[#1a4022] text-[#4db864] hover:bg-[#13261a] transition-all duration-150"
+                  >
+                    <span class="mdi mdi-check text-sm"></span>
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    (click)="rejectMapping(mapping)"
+                    class="flex items-center gap-1 px-3 py-1.5 rounded text-[0.65rem] font-medium bg-[#261013] border border-[#5e1a22] text-[#d4574d] hover:bg-[#2e1316] transition-all duration-150"
+                  >
+                    <span class="mdi mdi-close text-sm"></span>
+                    Reject
+                  </button>
+                </div>
+              </div>
+            } @else if (user.role === 'student') {
+              @if (mapping.status === 'rejected' && mapping.notes) {
+                <p class="mt-2 text-[0.7rem] text-red-400/80">rejected: {{ mapping.notes }}</p>
+              }
+            } @else if (user.role === 'staff') {
+              @if (mapping.status === 'rejected' && mapping.notes) {
+                <p class="mt-2 text-[0.7rem] text-red-400/80">rejected: {{ mapping.notes }}</p>
+              }
+            }
+
+          </div>
+        }
+      </div>
+    }
+  </fieldset>
+
+  <!-- Section: LA Modifications (visible to every role) -->
+  @if (modifications.length > 0) {
+    <div class="h-px bg-border-subtle mb-6"></div>
+    <fieldset class="mb-6">
+      <legend class="flex items-center gap-2 text-[0.6rem] text-text-muted uppercase tracking-widest mb-3">
+        <span class="mdi mdi-file-swap-outline text-sm"></span>
+        LA Modifications
+      </legend>
+
+      <div class="flex flex-col gap-3">
+        @for (mod of modifications; track mod.id) {
+          <div class="border border-border-subtle rounded p-3 bg-bg-base">
+
+            <!-- description of the proposal + its outcome -->
+            <div class="flex items-start justify-between gap-2">
+              <p class="text-[0.8rem] text-text-primary flex-1">{{ mod.description }}</p>
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded text-[0.6rem] font-medium uppercase tracking-wider border shrink-0"
+                [ngClass]="{
+                  'bg-[#261f10] border-[#5e4a1a] text-[#c9a040]': mod.status === 'pending',
+                  'bg-[#101e14] border-[#1a4022] text-[#4db864]': mod.status === 'approved',
+                  'bg-[#261013] border-[#5e1a22] text-[#d4574d]': mod.status === 'rejected'
+                }">
+                {{ mod.status }}
+              </span>
+            </div>
+
+            <!-- the mapping as it was before this proposal -->
+            @if (mod.snapshot.length > 0) {
+              <div class="mt-2 flex flex-col gap-1">
+                <p class="text-[0.65rem] text-text-muted uppercase tracking-wider">Previous mapping</p>
+                @for (row of mod.snapshot; track row.id) {
+                  <p class="text-[0.7rem] text-text-muted">
+                    {{ examLabel(row.sending_exam_id, sendingExams) }}
+                    <span class="mdi mdi-arrow-right"></span>
+                    {{ examLabel(row.host_exam_id, hostExams) }}
+                  </p>
+                }
+              </div>
+            }
+
+            @if (mod.status === 'rejected' && mod.notes) {
+              <p class="mt-2 text-[0.7rem] text-red-400/80">rejected: {{ mod.notes }}</p>
+            }
+
+            <!-- the referent decides while the mobility is ongoing -->
+            @if (user.role === 'referent' && application.status === 'mobility_ongoing' && mod.status === 'pending') {
+              <div class="mt-3 flex flex-col gap-2">
+                <textarea
+                  [(ngModel)]="modificationReason[mod.id]"
+                  [name]="'modificationReason_' + mod.id"
+                  rows="2"
+                  placeholder="Reason for rejection (required to reject) ..."
+                  class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 text-[0.8rem] text-text-primary placeholder:text-text-disabled transition-colors duration-150 resize-none"
+                ></textarea>
+                <div class="flex items-center gap-2 justify-end">
+                  <button
+                    type="button"
+                    (click)="approveModification(mod)"
+                    class="flex items-center gap-1 px-3 py-1.5 rounded text-[0.65rem] font-medium bg-[#101e14] border border-[#1a4022] text-[#4db864] hover:bg-[#13261a] transition-all duration-150"
+                  >
+                    <span class="mdi mdi-check text-sm"></span>
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    (click)="rejectModification(mod)"
+                    class="flex items-center gap-1 px-3 py-1.5 rounded text-[0.65rem] font-medium bg-[#261013] border border-[#5e1a22] text-[#d4574d] hover:bg-[#2e1316] transition-all duration-150"
+                  >
+                    <span class="mdi mdi-close text-sm"></span>
+                    Reject
+                  </button>
+                </div>
+              </div>
+            }
+
+          </div>
+        }
+      </div>
+    </fieldset>
+  }
+
+  <div class="h-px bg-border-subtle mb-6"></div>
+
+  <!-- Section: Learning Agreement -->
+  <fieldset class="mb-8">
+    <legend class="flex items-center gap-2 text-[0.6rem] text-text-muted uppercase tracking-widest mb-3">
+      <span class="mdi mdi-file-document-outline text-sm"></span>
+      Learning Agreement
+    </legend>
+
+    @if (learningAgreement) {
+      <div class="flex items-center gap-3 px-4 py-3 bg-bg-raised border border-border-default rounded">
+        <span
+          class="mdi text-xl shrink-0"
+          [ngClass]="{
+            'mdi-file-clock-outline text-[#c9a040]':           learningAgreement.status === 'pending',
+            'mdi-file-check-outline text-green-400/80':         learningAgreement.status === 'approved',
+            'mdi-file-document-remove-outline text-red-400/80': learningAgreement.status === 'rejected'
+          }"
+        ></span>
+        <button
+          type="button"
+          (click)="downloadDocument(learningAgreement)"
+          class="group flex items-center gap-2 min-w-0 flex-1 text-left"
+        >
+          <div class="flex flex-col min-w-0 flex-1">
+            <span class="text-[0.8rem] text-text-primary truncate group-hover:text-blue-400/80 transition-colors duration-100">{{ learningAgreement.file_path.split('/').pop() }}</span>
+            <span class="text-[0.65rem] text-text-muted">{{ learningAgreement.status }} · click to download</span>
+          </div>
+          <span class="mdi mdi-download text-text-muted group-hover:text-blue-400/80 text-base shrink-0 transition-colors duration-100"></span>
+        </button>
+      </div>
+
+      <!-- role based: referent approves/rejects, student/staff read the outcome -->
+      @if (user.role === 'referent') {
+        <div class="mt-3 flex flex-col gap-2">
+          <textarea
+            [(ngModel)]="laReason"
+            name="laReason"
+            rows="2"
+            placeholder="Reason for rejection (required to reject) ..."
+            class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 text-[0.8rem] text-text-primary placeholder:text-text-disabled transition-colors duration-150 resize-none"
+          ></textarea>
+          <div class="flex items-center gap-2 justify-end">
+            <button
+              type="button"
+              (click)="approveLearningAgreement()"
+              class="flex items-center gap-1 px-3 py-1.5 rounded text-[0.65rem] font-medium bg-[#101e14] border border-[#1a4022] text-[#4db864] hover:bg-[#13261a] transition-all duration-150"
+            >
+              <span class="mdi mdi-check text-sm"></span>
+              Approve
+            </button>
+            <button
+              type="button"
+              (click)="rejectLearningAgreement()"
+              class="flex items-center gap-1 px-3 py-1.5 rounded text-[0.65rem] font-medium bg-[#261013] border border-[#5e1a22] text-[#d4574d] hover:bg-[#2e1316] transition-all duration-150"
+            >
+              <span class="mdi mdi-close text-sm"></span>
+              Reject
+            </button>
+          </div>
+        </div>
+      } @else if (user.role === 'student') {
+        @if (learningAgreement.status === 'rejected' && learningAgreement.notes) {
+          <p class="mt-2 text-[0.7rem] text-red-400/80">rejected: {{ learningAgreement.notes }}</p>
+        }
+      } @else if (user.role === 'staff') {
+        @if (learningAgreement.status === 'rejected' && learningAgreement.notes) {
+          <p class="mt-2 text-[0.7rem] text-red-400/80">rejected: {{ learningAgreement.notes }}</p>
+        }
+      }
+    } @else {
+      <p class="text-[0.7rem] text-text-muted italic">No learning agreement uploaded yet.</p>
+    }
+  </fieldset>
+
+  <!-- Section: Transcript of Records -->
+  @if (transcript) {
+    <fieldset class="mb-8">
+      <legend class="flex items-center gap-2 text-[0.6rem] text-text-muted uppercase tracking-widest mb-3">
+        <span class="mdi mdi-file-document-outline text-sm"></span>
+        Transcript of Records
+      </legend>
+
+      <div class="flex items-center gap-3 px-4 py-3 bg-bg-raised border border-border-default rounded">
+        <span
+          class="mdi text-xl shrink-0"
+          [ngClass]="{
+            'mdi-file-clock-outline text-[#c9a040]':           transcript.status === 'pending',
+            'mdi-file-check-outline text-green-400/80':         transcript.status === 'approved',
+            'mdi-file-document-remove-outline text-red-400/80': transcript.status === 'rejected'
+          }"
+        ></span>
+        <button
+          type="button"
+          (click)="downloadDocument(transcript)"
+          class="group flex items-center gap-2 min-w-0 flex-1 text-left"
+        >
+          <div class="flex flex-col min-w-0 flex-1">
+            <span class="text-[0.8rem] text-text-primary truncate group-hover:text-blue-400/80 transition-colors duration-100">{{ transcript.file_path.split('/').pop() }}</span>
+            <span class="text-[0.65rem] text-text-muted">{{ transcript.status }} · click to download</span>
+          </div>
+          <span class="mdi mdi-download text-text-muted group-hover:text-blue-400/80 text-base shrink-0 transition-colors duration-100"></span>
+        </button>
+      </div>
+
+      <!-- role based: referent approves/rejects, student/staff read the outcome -->
+      @if (user.role === 'referent') {
+        <div class="mt-3 flex flex-col gap-2">
+          <textarea
+            [(ngModel)]="torReason"
+            name="torReason"
+            rows="2"
+            placeholder="Reason for rejection (required to reject) ..."
+            class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 text-[0.8rem] text-text-primary placeholder:text-text-disabled transition-colors duration-150 resize-none"
+          ></textarea>
+          <div class="flex items-center gap-2 justify-end">
+            <button
+              type="button"
+              (click)="approveTranscript()"
+              class="flex items-center gap-1 px-3 py-1.5 rounded text-[0.65rem] font-medium bg-[#101e14] border border-[#1a4022] text-[#4db864] hover:bg-[#13261a] transition-all duration-150"
+            >
+              <span class="mdi mdi-check text-sm"></span>
+              Approve
+            </button>
+            <button
+              type="button"
+              (click)="rejectTranscript()"
+              class="flex items-center gap-1 px-3 py-1.5 rounded text-[0.65rem] font-medium bg-[#261013] border border-[#5e1a22] text-[#d4574d] hover:bg-[#2e1316] transition-all duration-150"
+            >
+              <span class="mdi mdi-close text-sm"></span>
+              Reject
+            </button>
+          </div>
+        </div>
+      } @else if (user.role === 'student') {
+        @if (transcript.status === 'rejected' && transcript.notes) {
+          <p class="mt-2 text-[0.7rem] text-red-400/80">rejected: {{ transcript.notes }}</p>
+        }
+      } @else if (user.role === 'staff') {
+        @if (transcript.status === 'rejected' && transcript.notes) {
+          <p class="mt-2 text-[0.7rem] text-red-400/80">rejected: {{ transcript.notes }}</p>
+        }
+      }
+    </fieldset>
+  }
+
+  <!-- staff: advance to pre-departure (a database trigger validates the conditions) -->
+  @if (user.role === 'staff' && application.status === 'created') {
+    <div class="flex items-center justify-end pt-4 border-t border-border-subtle">
+      <button
+        type="button"
+        (click)="proceedToPreDeparture()"
+        class="flex items-center gap-1.5 px-4 py-2 rounded text-[0.7rem] font-medium bg-[#101e26] border border-[#1a3d52] text-[#4da8d4] hover:bg-[#13242e] transition-all duration-150"
+      >
+        <span class="mdi mdi-airplane-check text-sm"></span>
+        Proceed to Pre-Departure
+      </button>
+    </div>
+  }
+
+  <!-- staff: permanently close the application after recognition -->
+  @if (user.role === 'staff' && application.status === 'exam_recognition') {
+    <div class="flex items-center justify-end pt-4 border-t border-border-subtle">
+      <button
+        type="button"
+        (click)="closeApplication()"
+        class="flex items-center gap-1.5 px-4 py-2 rounded text-[0.7rem] font-medium bg-[#101e14] border border-[#1a4022] text-[#4db864] hover:bg-[#13261a] transition-all duration-150"
+      >
+        <span class="mdi mdi-lock-check-outline text-sm"></span>
+        Close Application
+      </button>
+    </div>
+  }
+
+</div>
