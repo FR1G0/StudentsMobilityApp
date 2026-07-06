@@ -25,6 +25,12 @@ export class Institutions {
     });
   }
 
+  // returns the information associated to the institution
+  getInstitution(id: number): Observable<Institution> {
+    const endpoint = this.base_url + '/api/institution/info/' + id;
+    return this.http.get<Institution>(endpoint, { headers: this.authHeaders() })
+  }
+
   // returns the status of the institution insertion (staff only)
   insertInstitution(body: InstitutionInsertBody): Observable<StatusResponse> {
     const endpoint = this.base_url + '/api/institution/insert';
@@ -37,10 +43,10 @@ export class Institutions {
     return this.http.post<StatusResponse>(endpoint, body, { headers: this.authHeaders() });
   }
 
-  // returns the status of the institution deletion (staff only)
-  deleteInstitution(id: number): Observable<StatusResponse> {
-    const endpoint = this.base_url + '/api/institution/delete/' + id;
-    return this.http.post<StatusResponse>(endpoint, {}, { headers: this.authHeaders() });
+  // returns the list of all institutions (id, name, country, city)
+  getInstitutions(): Observable<Institution[]> {
+    const endpoint = this.base_url + '/api/institutions';
+    return this.http.get<Institution[]>(endpoint, { headers: this.authHeaders() });
   }
 
   // returns the list of partner institutions linked to the given institution

@@ -2,6 +2,17 @@
 
 @import 'tailwindcss';
 
+html, body {
+  color-scheme: dark;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+app-root {
+  display: block;
+  height: 100%;
+}
 
 @theme {
   /* surfaces */

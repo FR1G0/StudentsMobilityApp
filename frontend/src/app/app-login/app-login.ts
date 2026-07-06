@@ -29,19 +29,30 @@ export class AppLogin {
 
   attempt_login() {
     this.auth.login(this.email, this.password).subscribe({
-      next: res => {
-        console.log(res);
-        this.cookie_manager.setCookie('token',res.token,1);
-        this.cookie_manager.setCookie('user',JSON.stringify(res.user),1);
+      next: async res => {
+        await this.offerSaveCredentials(this.email, this.password);
+        this.cookie_manager.setCookie('token', res.token, 1);
+        this.cookie_manager.setCookie('user', JSON.stringify(res.user), 1);
         this.app.update_data();
+        this.app.send_notification('Logged in successfully', 'success');
         this.router.navigate(['applications']);
         this.cdr.markForCheck();
       },
       error: err => {
-        this.error_message = 'invalid username or password';
+        // when the request fails, show the message returned by the backend
+        let message = 'invalid username or password';
+        if (err.error && err.error.error) {
+          message = err.error.error;
+        }
+        this.error_message = message;
+        this.app.send_notification(message, 'error');
         this.cdr.markForCheck();
         console.log(err);
       }
     });
+  }
+
+  private async offerSaveCredentials(email: string, password: string): Promise<void> {
+
   }
 }

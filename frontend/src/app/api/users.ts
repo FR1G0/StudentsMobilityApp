@@ -42,18 +42,6 @@ export class Users {
     return this.http.get<User>(endpoint, { headers: this.authHeaders() });
   }
 
-  // returns the list of users whose firstname matches the given name
-  getUsersByName(name: string): Observable<User[]> {
-    const endpoint = this.base_url + '/api/user/name:' + name;
-    return this.http.get<User[]>(endpoint, { headers: this.authHeaders() });
-  }
-
-  // returns the user matching the given firstname and lastname
-  getUserByNameSurname(name: string, surname: string): Observable<User> {
-    const endpoint = this.base_url + '/api/user/' + name + '/' + surname;
-    return this.http.get<User>(endpoint, { headers: this.authHeaders() });
-  }
-
   // returns the status of the user insertion
   insertUser(body: UserInsertBody): Observable<StatusResponse> {
     const endpoint = this.base_url + '/api/user/insert';

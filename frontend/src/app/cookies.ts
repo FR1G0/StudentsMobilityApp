@@ -38,7 +38,7 @@ export class Cookies {
 
   // function to delete a cookie
   deleteCookie(name: string): void {
-    if(isPlatformBrowser(this.platformId)) { return; }
+    if(!isPlatformBrowser(this.platformId)) { return; }
       document.cookie = `${name}=; Max-Age=-99999999; path=/; SameSite=Strict; Secure`;
   }
 }

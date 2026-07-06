@@ -25,7 +25,7 @@
       [(ngModel)]="inputSearch"
       id="search"
       type="text"
-      placeholder="ID, year, semester, status..."
+      placeholder="Search by sending or host institution..."
       class="bg-transparent text-[0.7rem] text-text-primary placeholder:text-text-disabled outline-none w-full"
     />
     @if (inputSearch) {
@@ -45,11 +45,13 @@
   <!-- Header -->
   <div class="w-full grid grid-cols-12 gap-2 px-4 py-2.5 rounded-lg border border-border-subtle bg-bg-raised">
     <p class="col-span-1 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">ID</p>
-    <p class="col-span-3 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Academic Year</p>
-    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Semester</p>
-    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Host Inst.</p>
-    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Status</p>
-    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Actions</p>
+    <p class="col-span-1 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Year</p>
+    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Student Email</p>
+    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Referent Email</p>
+    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Sending</p>
+    <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Host</p>
+    <p class="col-span-1 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Status</p>
+    <p class="col-span-1 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium text-right">Action</p>
   </div>
 
   <!-- Loading state -->
@@ -65,15 +67,17 @@
     <div class="flex flex-col mt-2">
       @for (application of filteredApplications; track application.id; let last = $last) {
         <div
-          class="w-full grid grid-cols-12 gap-2 px-4 py-3 items-center border-x border-t border-border-subtle bg-bg-surface hover:bg-bg-raised transition-colors duration-100 cursor-pointer group first:rounded-t-lg"
+          class="w-full grid grid-cols-12 gap-2 px-4 py-3 items-center border-x border-t border-border-subtle bg-bg-surface hover:bg-bg-raised transition-colors duration-100 group first:rounded-t-lg"
           [class.border-b]="last"
           [class.rounded-b-lg]="last" >
           <p class="col-span-1 text-[0.7rem] text-text-muted font-mono tabular-nums">#{{ application.id }}</p>
-          <p class="col-span-3 text-[0.7rem] text-text-primary truncate">{{ formatYear(application.year) }}</p>
-          <p class="col-span-2 text-[0.7rem] text-text-secondary truncate capitalize">{{ application.semester }}</p>
-          <p class="col-span-2 text-[0.7rem] text-text-muted font-mono">#{{ application.host_institution }}</p>
+          <p class="col-span-1 text-[0.7rem] text-text-primary truncate">{{ formatYear(application.year) }}</p>
+          <p class="col-span-2 text-[0.7rem] text-text-secondary truncate">{{ application.user?.email }}</p>
+          <p class="col-span-2 text-[0.7rem] text-text-secondary truncate">{{ application.referent?.email || '—' }}</p>
+          <p class="col-span-2 text-[0.7rem] text-text-secondary truncate">{{ application.sending?.name }}</p>
+          <p class="col-span-2 text-[0.7rem] text-text-secondary truncate">{{ application.host?.name }}</p>
 
-          <div class="col-span-2">
+          <div class="col-span-1">
             <span
               class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[0.6rem] font-medium uppercase tracking-wider border"
               [ngClass]="{
@@ -95,20 +99,51 @@
                   'bg-[#4db864]': application.status === 'closed'
                 }"
               ></span>
-              {{ application.status }}
+              {{ shortenStatus(application.status) }}
             </span>
           </div>
 
-          <!-- Action -->
-          <div class="col-span-2 flex items-center opacity-60 group-hover:opacity-100 transition-opacity duration-100">
+          <!-- Action: 3-dot menu with the actions allowed for the current role -->
+          <div class="col-span-1 flex justify-end relative">
             <button
               type="button"
-              (click)="$event.stopPropagation(); editApplication(application)"
-              class="flex items-center gap-1 px-2.5 py-1 rounded text-[0.65rem] font-medium border border-border-default text-text-secondary hover:bg-bg-overlay hover:border-border-strong hover:text-text-primary transition-all duration-100"
+              (click)="toggleMenu(application.id, $event)"
+              class="w-7 h-7 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-bg-overlay transition-all duration-100"
             >
-              <span class="mdi mdi-pencil-outline text-xs"></span>
-              Modify
+              <span class="mdi mdi-dots-vertical text-base"></span>
             </button>
+
+            @if (openMenuId === application.id) {
+              <div class="absolute right-0 top-8 z-20 min-w-[8rem] flex flex-col py-1 rounded-md border border-border-default bg-bg-overlay shadow-lg">
+                <button
+                  type="button"
+                  (click)="viewApplication(application); closeMenu()"
+                  class="flex items-center gap-2 px-3 py-1.5 text-[0.7rem] text-text-secondary hover:bg-bg-raised hover:text-text-primary transition-colors duration-100"
+                >
+                  <span class="mdi mdi-eye-outline text-sm"></span>
+                  View
+                </button>
+
+                @if (role === 'student') {
+                  <button
+                    type="button"
+                    (click)="editApplication(application); closeMenu()"
+                    class="flex items-center gap-2 px-3 py-1.5 text-[0.7rem] text-text-secondary hover:bg-bg-raised hover:text-text-primary transition-colors duration-100"
+                  >
+                    <span class="mdi mdi-pencil-outline text-sm"></span>
+                    Modify
+                  </button>
+                  <button
+                    type="button"
+                    (click)="deleteApplication(application); closeMenu()"
+                    class="flex items-center gap-2 px-3 py-1.5 text-[0.7rem] text-text-secondary hover:bg-red-500/10 hover:text-red-400/80 transition-colors duration-100"
+                  >
+                    <span class="mdi mdi-trash-can-outline text-sm"></span>
+                    Delete
+                  </button>
+                }
+              </div>
+            }
           </div>
         </div>
       }
@@ -123,3 +158,8 @@
   }
 
 </div>
+
+<!-- click-away backdrop: closes the open action menu when clicking elsewhere -->
+@if (openMenuId !== null) {
+  <div class="fixed inset-0 z-10" (click)="closeMenu()"></div>
+}

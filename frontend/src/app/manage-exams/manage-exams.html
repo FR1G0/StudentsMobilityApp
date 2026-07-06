@@ -1,0 +1,117 @@
+<!-- title -->
+<div class="w-full">
+  <h1 class="text-xl font-bold text-white">Manage Exams</h1>
+</div>
+
+<!-- Section: create a new exam -->
+<div class="bg-bg-surface border border-border-subtle rounded-lg p-6 mt-4">
+  <form (ngSubmit)="createExam()">
+    <fieldset class="mb-6">
+      <legend class="flex items-center gap-2 text-[0.6rem] text-text-muted uppercase tracking-widest mb-3">
+        <span class="mdi mdi-book-plus-outline text-sm"></span>
+        New Exam
+      </legend>
+      <div class="grid grid-cols-4 gap-3">
+
+        <div class="flex flex-col gap-1">
+          <label for="new-code" class="text-[0.7rem] text-text-secondary">Code <span class="text-red-500/70">*</span></label>
+          <input
+            [(ngModel)]="newCode"
+            id="new-code"
+            name="newCode"
+            type="text"
+            placeholder="e.g. CS101"
+            class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 text-[0.8rem] text-text-primary placeholder:text-text-disabled transition-colors duration-150"
+          />
+        </div>
+
+        <div class="flex flex-col gap-1 col-span-2">
+          <label for="new-name" class="text-[0.7rem] text-text-secondary">Name <span class="text-red-500/70">*</span></label>
+          <input
+            [(ngModel)]="newName"
+            id="new-name"
+            name="newName"
+            type="text"
+            placeholder="Exam name"
+            class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 text-[0.8rem] text-text-primary placeholder:text-text-disabled transition-colors duration-150"
+          />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label for="new-credits" class="text-[0.7rem] text-text-secondary">Credits <span class="text-red-500/70">*</span></label>
+          <input
+            [(ngModel)]="newCredits"
+            id="new-credits"
+            name="newCredits"
+            type="number"
+            min="1"
+            class="w-full bg-bg-base border border-border-default hover:border-border-strong focus:border-border-strong focus:outline-none rounded px-3 py-2 text-[0.8rem] text-text-primary transition-colors duration-150"
+          />
+        </div>
+
+      </div>
+    </fieldset>
+
+    <div class="flex justify-end pt-4 border-t border-border-subtle">
+      <button
+        type="submit"
+        class="flex items-center gap-1.5 px-4 py-2 rounded text-[0.7rem] font-medium bg-[#1a2a3a] border border-[#2e4a6e] text-[#7ab0e0] hover:bg-[#1e3248] hover:border-[#3d6090] transition-all duration-150"
+      >
+        <span class="mdi mdi-book-plus-outline text-sm"></span>
+        Create
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Section: exams list -->
+<div class="bg-bg-surface border border-border-subtle rounded-lg p-6 mt-4">
+  <fieldset>
+    <legend class="flex items-center gap-2 text-[0.6rem] text-text-muted uppercase tracking-widest mb-3">
+      <span class="mdi mdi-book-open-outline text-sm"></span>
+      Exams List
+    </legend>
+
+    <!-- Loading state -->
+    @if (isLoading) {
+      <div class="flex items-center justify-center py-12 text-text-muted">
+        <span class="mdi mdi-loading mdi-spin text-xl mr-2"></span>
+        <p class="text-[0.7rem]">Loading exams...</p>
+      </div>
+    }
+
+    @if (!isLoading) {
+      <!-- column labels -->
+      <div class="grid grid-cols-12 gap-2 px-4 mb-2">
+        <p class="col-span-1 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">ID</p>
+        <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Code</p>
+        <p class="col-span-5 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Name</p>
+        <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium">Credits</p>
+        <p class="col-span-2 text-[0.6rem] text-text-muted uppercase tracking-widest font-medium text-right">Action</p>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        @for (exam of exams; track exam.id) {
+          <div class="grid grid-cols-12 gap-2 items-center px-4 py-3 border border-border-subtle rounded bg-bg-base hover:bg-bg-raised transition-colors duration-100">
+            <p class="col-span-1 text-[0.7rem] text-text-muted font-mono tabular-nums">#{{ exam.id }}</p>
+            <p class="col-span-2 text-[0.7rem] text-text-secondary font-mono truncate">{{ exam.code }}</p>
+            <p class="col-span-5 text-[0.8rem] text-text-primary truncate">{{ exam.name }}</p>
+            <p class="col-span-2 text-[0.7rem] text-text-secondary tabular-nums">{{ exam.credits }} cr.</p>
+            <div class="col-span-2 flex justify-end">
+              <button
+                type="button"
+                (click)="deleteExam(exam)"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded text-[0.7rem] font-medium bg-[#261013] border border-[#5e1a22] text-[#d4574d] hover:bg-[#2e141a] transition-all duration-150"
+              >
+                <span class="mdi mdi-trash-can-outline text-sm"></span>
+                Delete
+              </button>
+            </div>
+          </div>
+        } @empty {
+          <p class="text-[0.7rem] text-text-muted italic">No exams found.</p>
+        }
+      </div>
+    }
+  </fieldset>
+</div>
