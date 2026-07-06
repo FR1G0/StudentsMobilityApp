@@ -32,7 +32,7 @@ services:
     networks:
       - overseas-network
     ports:
-      - "3000:3000"
+      - "5000:5000"
     environment:
       - DATABASE_URL=postgresql://myuser:123@overseas-db-container:5432/overseas_db
       - SECRET_KEY=${SECRET_KEY:-supersecret}

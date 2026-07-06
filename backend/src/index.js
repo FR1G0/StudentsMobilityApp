@@ -1,12 +1,14 @@
 // index.js MAIN file
-
-const express = require('express')
-const db = require('./db');
+import express from "express";
+import cors from "cors";
+import db from "./db.js";
+import users from "./routes/users.js"
 
 const app = express();
 app.use(express.json());
+app.use(users);
 
-const PORT = 3000;
+const PORT = 5000;
 
 app.get("/", (req,res) => {
 	res.send("Welcome to the home page!");
