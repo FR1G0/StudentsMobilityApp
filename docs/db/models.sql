@@ -52,6 +52,12 @@ CREATE TABLE applications (
 	
 	-- make sure that it's the user's actual institution
 	FOREIGN KEY (user_id, sending_institution) REFERENCES users(id,id_institution),
+	FOREIGN KEY (referent_id, sending_institution) REFERENCES users(id, id_institution),
+
+	-- make sure that the two institutions are partners
+	FOREIGN KEY (sending_institution, host_institution) REFERENCES partner_institution (id_institution, id_partner_institution)
+		ON UPDATE CASCADE,
+
 
 	user_id INT NOT NULL,
 	FOREIGN KEY (user_id) REFERENCES users(id)
@@ -59,22 +65,33 @@ CREATE TABLE applications (
 		ON UPDATE CASCADE,
 
 	
+	-- TODO: add constraints that prevents user from adding application before the current date
 
 	CONSTRAINT different_host_sending CHECK (host_institution <> sending_institution),
 	CONSTRAINT valid_mobility_dates CHECK (
 		date_arrived IS NULL OR date_departure IS NULL
 		OR date_departure >= date_arrived
 	),
+	CONSTRAINT valid_academic_year CHECK (
+		(date_arrived IS NULL OR EXTRACT(YEAR FROM date_arrived) IN (year, year+1))
+		AND
+		(date_departure IS NULL OR EXTRACT(YEAR FROM date_departure) IN (year, year+1))
+	),
 	CONSTRAINT valid_semester CHECK (semester IN ('first','second','full')),
 	CONSTRAINT valid_status CHECK (status IN (
-		'created',
 		'learning_agreement_pending',
+		'created',
 		'pre_departure_completed',
 		'mobility_ongoing',
 		'exam_recognition',
 		'closed'
-	))
-	-- TODO: CONSTRAINTS: check if host institution is user id's institution
+	)),
+	CONSTRAINT valid_ongoing CHECK(
+		NOT(status='mobility_ongoing' AND date_arrived IS NULL )
+	),
+	CONSTRAINT valid_recognition CHECK(
+		NOT(status='exam_recognition' AND date_departure IS NULL )
+	)
 );
 
 
@@ -84,8 +101,6 @@ CREATE TABLE exams (
 	name VARCHAR(255) NOT NULL,
 	credits INT NOT NULL,
 	-- TODO: can this be null? can an institution get deleted but keep the exam for exam mappings?
-
-
 
 	id_institution INT NOT NULL,
 	FOREIGN KEY (id_institution) REFERENCES institutions(id)
@@ -109,7 +124,6 @@ CREATE TABLE mapped_exams (
 	decision_date TIMESTAMPTZ,
 	notes TEXT DEFAULT '',
 	-- pervious_id to restore old mapping if *this* mapping gets rejected 
-	previous_id INT NOT NULL default -1,
 
 	FOREIGN KEY (application_id) REFERENCES applications(id)
 		ON DELETE CASCADE
@@ -122,7 +136,6 @@ CREATE TABLE mapped_exams (
 	FOREIGN KEY (sending_exam_id) REFERENCES exams(id)
 		ON DELETE RESTRICT
 		ON UPDATE CASCADE,
-	-- TODO: TRIGGER make sure the exams belong to the correct institutions
 	
 	CONSTRAINT valid_status CHECK (status in ('pending','approved','rejected')),
 	CONSTRAINT valid_grade CHECK (grade =-1 OR (grade > 17 AND grade <= 30)),
@@ -130,9 +143,9 @@ CREATE TABLE mapped_exams (
 		(grade=-1 AND date_passed IS NULL)
 		OR (grade <> -1 AND date_passed IS NOT NULL)
 	),
-	-- TODO: enforce host_exam_id.id_institution = application.host_institution
-    -- TODO: enforce sending_exam_id.id_institution = application.sending_institution
-	UNIQUE (application_id,host_exam_id,sending_exam_id)
+
+	UNIQUE (application_id, sending_exam_id),
+	UNIQUE (application_id, host_exam_id)
 );
 
 CREATE TABLE uploaded_documents (
@@ -173,6 +186,60 @@ CREATE TABLE partner_institution (
 		ON UPDATE CASCADE,
 
 	-- NO A->A 
-	CONSTRAINT self_partner CHECK (id_institution <> id_partner_institution), 
+	CONSTRAINT self_partner CHECK (id_institution <> id_partner_institution),
 	UNIQUE (id_institution,id_partner_institution)
-)
+);
+
+CREATE TABLE la_modifications (
+	id SERIAL PRIMARY KEY,
+	application_id INT NOT NULL,
+	-- text describing what the modification is about
+	description TEXT NOT NULL,
+	-- status can be: pending, approved, rejected
+	status VARCHAR(32) NOT NULL default 'pending',
+	-- referent can approve or reject the modification request
+	decision_date TIMESTAMPTZ,
+	notes TEXT DEFAULT '',
+
+	FOREIGN KEY (application_id) REFERENCES applications(id)
+		ON DELETE CASCADE
+		ON UPDATE CASCADE,
+
+	-- optional document attached to the modification (e.g. a new learning agreement)
+	document_id INT,
+	FOREIGN KEY (document_id) REFERENCES uploaded_documents(id)
+		-- if the document gets deleted, keep the modification record
+		ON DELETE SET NULL
+		ON UPDATE CASCADE,
+
+	CONSTRAINT valid_modification_status CHECK (status IN ('pending','approved','rejected'))
+);
+
+CREATE TABLE la_modification_exams (
+	-- typed snapshot of the mapped_exams set as it was BEFORE the modification
+	id SERIAL PRIMARY KEY,
+	modification_id INT NOT NULL,
+	FOREIGN KEY (modification_id) REFERENCES la_modifications(id)
+		ON DELETE CASCADE
+		ON UPDATE CASCADE,
+
+	host_exam_id INT NOT NULL,
+	FOREIGN KEY (host_exam_id) REFERENCES exams(id)
+		ON DELETE RESTRICT
+		ON UPDATE CASCADE,
+	sending_exam_id INT NOT NULL,
+	FOREIGN KEY (sending_exam_id) REFERENCES exams(id)
+		ON DELETE RESTRICT
+		ON UPDATE CASCADE,
+
+	-- grade=-1 means not passed
+	grade INT default -1,
+	date_passed DATE,
+	-- status can be: pending, approved, rejected
+	status VARCHAR(32) NOT NULL default 'pending',
+	notes TEXT DEFAULT '',
+	decision_date TIMESTAMPTZ,
+
+	UNIQUE (modification_id, sending_exam_id),
+	UNIQUE (modification_id, host_exam_id)
+);
