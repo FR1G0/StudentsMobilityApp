@@ -2,6 +2,10 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import db from "./db.js";
 
+export const ROLE_STUDENT = "student"
+export const ROLE_REFERENT = "referent"
+export const ROLE_OVERSEAS = "staff"
+
 // Verifies werkzeug-format hashes: "pbkdf2:sha256:<iterations>$<salt>$<hexhash>"
 export function checkPasswordHash(hashed_password, plaintext_password) {
     if (!hashed_password || typeof hashed_password !== "string") return false;
@@ -10,6 +14,7 @@ export function checkPasswordHash(hashed_password, plaintext_password) {
 
 	// ["pbkdf2", "sha256", "<iterations>"] 
     const parts = method.split(":");
+
     if (parts[0] !== "pbkdf2") return false;
     const algo = parts[1];
     const iterations = parseInt(parts[2], 10);
@@ -18,25 +23,62 @@ export function checkPasswordHash(hashed_password, plaintext_password) {
     const expected = Buffer.from(hashHex, "hex");
     const derived = crypto.pbkdf2Sync(plaintext_password, salt, iterations, expected.length, algo);
 
-    // Constant-time compare
     if (derived.length !== expected.length) return false;
     return crypto.timingSafeEqual(derived, expected);
 }
 
+//	expects an array of roles
+export function requireRoles(...allowed) {
+    const allowedRoles = new Set(allowed.map(normalizeRole));
+    return function (req, res, next) {
+        const role = req.currentUserRole ?? null;
+        if (role === null) {
+            return res.status(401).json({ error: "authentication required" });
+        }
+        if (!allowedRoles.has(role)) {
+            return res.status(403).json({ error: "role not authorized" });
+        }
+        return next();
+    };
+}
+
+//	expects userObject as json user and id_institution as a number
+export function user_in_institution(user, id_institution) {
+	if(!user.id_institution || !id_institution)
+		return false;
+	return user.id_institution == id_institution;
+}
+
+export function can_view_application(application, user, role) {
+	if(!application.user_id || !user.id)
+		return false;
+	if(normalizeRole(role)==ROLE_STUDENT) {
+		return application.user_id == user.id;
+	}
+	if(normalizeRole(role)==ROLE_REFERENT) {
+		return application.referent_id == user.id;
+	}
+	if(normalizeRole(role)==ROLE_OVERSEAS) {
+		return application.sending_institution == user.id_institution;
+	}
+	return false;
+}
+
+//	expects role as a string "student"
 export function normalizeRole(role) {
-    if (!role) {
-        return null;
-    }
+    if (!role) { return null; }
     return role.trim().toLowerCase().replaceAll(" ", "_");
 }
+
 
 //	get JWT Secret
 export function getJwtSecret() {
     return process.env.JWT_SECRET || process.env.SECRET_KEY;
 }
 
+
 //	jwt check middleware
-export function customJwtRequired() {
+export function customJwtRequired(roles) {
     return async function (req, res, next) {
 
         const authHeader = req.headers["authorization"] || "";
