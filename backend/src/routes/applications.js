@@ -440,8 +440,8 @@ api.post("/api/application/documents/:id", customJwtRequired(), async (req, res)
 
 // OK: [POST] /application/document/insert
 // inserts a new uploaded_document **row only** using the json body data
-// FIXME: arbitrary file deletion vuln, file_path is not sanitized
-// FIX: do not let client control filepath and only derive it server side
+// FIXED: file_path is sanitized to basename on insert; delete/download resolve
+// against the owning application's upload dir instead of trusting the stored path
 // this probably happens elsewhere in the code also, need to fix.
 api.post("/api/application/document/insert", customJwtRequired(), requireRoles(ROLE_STUDENT), async (req, res) => {
 	try {
@@ -470,11 +470,17 @@ api.post("/api/application/document/insert", customJwtRequired(), requireRoles(R
 		if ("notes" in data) {
 			notes = data.notes;
 		}
+		// store only the filename, never a client-controlled path (prevents arbitrary
+		// file delete/read via file_path in the delete/download routes)
+		const safe_file_path = path.basename(data.file_path || "");
+		if (!safe_file_path) {
+			return res.status(400).json({ status: "failed", error: "missing or invalid file_path" });
+		}
 		// status='pending' is a client-side ORM default in flask, the DB column has no default
 		let new_doc = await db.one(
 			`INSERT INTO uploaded_documents (document_type, file_path, user_id, application_id, notes, status)
 			 VALUES ($1,$2,$3,$4,$5,'pending') RETURNING id`,
-			[data.document_type, data.file_path, req.currentUserId, data.application_id, notes]
+			[data.document_type, safe_file_path, req.currentUserId, data.application_id, notes]
 		);
 		res.status(200).json({ status: "success", id: new_doc.id });
 	} catch (error) {
@@ -543,14 +549,9 @@ api.post("/api/application/document/:id/delete", customJwtRequired(), requireRol
 			return res.status(403).json({ status: "failed", error: `cannot delete this document when application is in ${application.status}` });
 		}
 
-		const file_path = doc.file_path;
-		const application_id = doc.application_id;
-
-		// if file_path is just the filename, fall back to the application uploads dir
-		const target = (file_path && await pathExists(file_path))
-			? file_path
-      // FIXME: possible arbitrary file deletion vuln
-			: path.join(applicationUploadDir(application_id), path.basename(file_path || ""));
+		// always resolve against the owning application's upload dir; never trust the
+		// stored file_path as a real path (basename strips any directory/traversal)
+		const target = path.join(applicationUploadDir(doc.application_id), path.basename(doc.file_path || ""));
 		try {
 			await fs.unlink(target);
 		} catch (e) {
@@ -581,16 +582,11 @@ api.get("/api/application/document/:id/download", customJwtRequired(), async (re
 			return res.status(403).json({ error: "not authorized for this document" });
 		}
 
-		let file_path = doc.file_path;
-    // NOTE: sync function removed here
-		if (!file_path || !(await pathExists(file_path))) {
-			// if file_path is just the filename, try the application uploads dir
-			const candidate = path.join(applicationUploadDir(doc.application_id), path.basename(file_path || ""));
-			if (await pathExists(candidate)) {
-				file_path = candidate;
-			} else {
-				return res.status(404).json({ error: "file not found" });
-			}
+		// always resolve against the owning application's upload dir; never serve the
+		// stored file_path as a real path (basename strips any directory/traversal)
+		const file_path = path.join(applicationUploadDir(doc.application_id), path.basename(doc.file_path || ""));
+		if (!(await pathExists(file_path))) {
+			return res.status(404).json({ error: "file not found" });
 		}
 
 		res.download(file_path, path.basename(file_path));
