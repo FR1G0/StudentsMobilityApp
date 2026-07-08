@@ -1,6 +1,6 @@
 import express from "express";
 import path from "path";
-import fs from "fs";
+import fs from "fs/promises";
 import multer from "multer";
 import { fileURLToPath } from "url";
 import db from "../db.js"
@@ -26,6 +26,16 @@ const UPLOADS_BASE_DIR = path.join(
 
 function applicationUploadDir(application_id) {
 	return path.join(UPLOADS_BASE_DIR, String(application_id));
+}
+
+// async existence check (fs/promises has no existsSync)
+async function pathExists(p) {
+	try {
+		await fs.access(p);
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 // same columns as Application.to_dict(), date columns casted to text
@@ -80,7 +90,7 @@ api.post("/api/application/insert", customJwtRequired(), requireRoles(ROLE_STUDE
 		);
 
 		const upload_dir = applicationUploadDir(new_app.id);
-		fs.mkdirSync(upload_dir, { recursive: true });
+		await fs.mkdir(upload_dir, { recursive: true });
 
 		res.status(200).json({ status: "success", id: new_app.id });
 	} catch (error) {
@@ -88,7 +98,7 @@ api.post("/api/application/insert", customJwtRequired(), requireRoles(ROLE_STUDE
 	}
 })
 
-// OK: [POST] /application/update/:id
+// PASSED: [POST] /application/update/:id
 // updates the editable fields of an application (student, own application only).
 // status is intentionally excluded: it has its own workflow route.
 api.post("/api/application/update/:id", customJwtRequired(), requireRoles(ROLE_STUDENT), async (req, res) => {
@@ -256,7 +266,7 @@ api.post("/api/application/status/update/:id", customJwtRequired(), requireRoles
 	}
 })
 
-// OK: [POST] /application/delete/:id
+// PASSED: [POST] /application/delete/:id
 // deletes the application row identified by :id (student and staff only), both student and staff can delete applications
 api.post("/api/application/delete/:id", customJwtRequired(), requireRoles(ROLE_STUDENT, ROLE_OVERSEAS), async (req, res) => {
 	try {
@@ -282,7 +292,7 @@ api.post("/api/application/delete/:id", customJwtRequired(), requireRoles(ROLE_S
 
 //   -------  APPLICATION INFORMATION SECTION  -------
 
-// OK: [GET] /applications/info/list
+// PASSED: [GET] /applications/info/list
 // returns the list of applications visible to the current user (same role
 // scoping as /applications) together with their sending/host institutions,
 // the owner student and the referent (joined data), in json format
@@ -367,7 +377,7 @@ api.get("/api/applications/info/list", customJwtRequired(), async (req, res) => 
 	}
 })
 
-// OK: [GET] /application/info/semester
+// PASSED: [GET] /application/info/semester
 // returns the list of allowed semester values
 // for frontend
 api.get("/api/application/info/semester", (req, res) => {
@@ -430,6 +440,9 @@ api.post("/api/application/documents/:id", customJwtRequired(), async (req, res)
 
 // OK: [POST] /application/document/insert
 // inserts a new uploaded_document **row only** using the json body data
+// FIXME: arbitrary file deletion vuln, file_path is not sanitized
+// FIX: do not let client control filepath and only derive it server side
+// this probably happens elsewhere in the code also, need to fix.
 api.post("/api/application/document/insert", customJwtRequired(), requireRoles(ROLE_STUDENT), async (req, res) => {
 	try {
 		const data = req.body;
@@ -496,11 +509,11 @@ api.post("/api/application/document/upload", customJwtRequired(), requireRoles(R
 		}
 
 		const upload_dir = applicationUploadDir(application_id);
-		fs.mkdirSync(upload_dir, { recursive: true });
+		await fs.mkdir(upload_dir, { recursive: true });
 
 		const filename = path.basename(uploaded_file.originalname);
 		const destination = path.join(upload_dir, filename);
-		fs.writeFileSync(destination, uploaded_file.buffer);
+		await fs.writeFile(destination, uploaded_file.buffer);
 
 		res.status(200).json({ status: "success", file_path: destination });
 	} catch (error) {
@@ -533,14 +546,15 @@ api.post("/api/application/document/:id/delete", customJwtRequired(), requireRol
 		const file_path = doc.file_path;
 		const application_id = doc.application_id;
 
-		if (file_path && fs.existsSync(file_path)) {
-			fs.unlinkSync(file_path);
-		} else {
-			// if file_path is just the filename, try the application uploads dir
-			const candidate = path.join(applicationUploadDir(application_id), path.basename(file_path || ""));
-			if (fs.existsSync(candidate)) {
-				fs.unlinkSync(candidate);
-			}
+		// if file_path is just the filename, fall back to the application uploads dir
+		const target = (file_path && await pathExists(file_path))
+			? file_path
+      // FIXME: possible arbitrary file deletion vuln
+			: path.join(applicationUploadDir(application_id), path.basename(file_path || ""));
+		try {
+			await fs.unlink(target);
+		} catch (e) {
+			if (e.code !== "ENOENT") throw e;
 		}
 
 		await db.none(`DELETE FROM uploaded_documents WHERE id=$1`, [doc.id]);
@@ -568,10 +582,11 @@ api.get("/api/application/document/:id/download", customJwtRequired(), async (re
 		}
 
 		let file_path = doc.file_path;
-		if (!file_path || !fs.existsSync(file_path)) {
+    // NOTE: sync function removed here
+		if (!file_path || !(await pathExists(file_path))) {
 			// if file_path is just the filename, try the application uploads dir
 			const candidate = path.join(applicationUploadDir(doc.application_id), path.basename(file_path || ""));
-			if (fs.existsSync(candidate)) {
+			if (await pathExists(candidate)) {
 				file_path = candidate;
 			} else {
 				return res.status(404).json({ error: "file not found" });
