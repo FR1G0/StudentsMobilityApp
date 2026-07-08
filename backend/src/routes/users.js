@@ -3,7 +3,10 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
+import { promisify } from "util";
 import db from "../db.js"
+
+const pbkdf2 = promisify(crypto.pbkdf2);
 import {
 	customJwtRequired,
 	getJwtSecret,
@@ -18,20 +21,23 @@ import { extractDbError } from "./api.js";
 const api = express.Router();
 
 // creates a werkzeug-format hash: "pbkdf2:sha256:<iterations>$<salt>$<hexhash>"
-function generatePasswordHash(plaintext_password) {
+// NOTE: generatePasswordHash CANNOT be sync, that could literally freeze the db for 100ms+
+async function generatePasswordHash(plaintext_password) {
 	const iterations = 600000;
 	const salt = crypto.randomBytes(8).toString("hex");
-	const derived = crypto.pbkdf2Sync(plaintext_password, salt, iterations, 32, "sha256");
+	const derived = await pbkdf2(plaintext_password, salt, iterations, 32, "sha256");
 	return "pbkdf2:sha256:" + iterations + "$" + salt + "$" + derived.toString("hex");
 }
 
+// FIXED: now users can't just dump the all the users in the db.
 // NOTE: [GET] /api/users to retrieve a list fo all users in the database
-api.get("/api/users", customJwtRequired(), requireRoles(ROLE_STUDENT,ROLE_OVERSEAS) , async (req,res) => {
+api.get("/api/users", customJwtRequired(), requireRoles(ROLE_OVERSEAS) , async (req,res) => {
 	try {
-		let data = await db.any(`SELECT id,email,role,firstname,lastname,id_institution FROM users`);
+    // FIXED: staff can only see own institution users
+		let data = await db.any(`SELECT id,email,role,firstname,lastname,id_institution FROM users WHERE id_institution=$1`, [req.currentUser.id_institution]);
 		res.status(200).json(data);
 	} catch(error) {
-		res.status(200).json({error:`${error}`})
+		res.status(500).json({error: extractDbError(error)})
 	}
 })
 
@@ -51,7 +57,7 @@ api.post("/api/login", async (req, res) => {
     }
 
     // password_hash stores a werkzeug hash (pbkdf2).
-    if (!user || !checkPasswordHash(user.password_hash, data.password)) {
+    if (!user || !(await checkPasswordHash(user.password_hash, data.password))) {
         return res.status(401).json({ error: "invalid credentials" });
     }
 
@@ -134,7 +140,7 @@ api.post("/api/user/insert", customJwtRequired(), requireRoles(ROLE_OVERSEAS), a
 
 		await db.none(
 			`INSERT INTO users (email, password_hash, role, firstname, lastname, id_institution) VALUES ($1,$2,$3,$4,$5,$6)`,
-			[data.email, generatePasswordHash(raw_password), data.role, data.firstname, data.lastname, data.id_institution]
+			[data.email, await generatePasswordHash(raw_password), data.role, data.firstname, data.lastname, data.id_institution]
 		);
 		res.status(200).json({ status: "success" });
 	} catch (error) {
@@ -167,9 +173,9 @@ api.post("/api/user/update", customJwtRequired(), requireRoles(ROLE_OVERSEAS), a
 			user.email = data.email;
 		}
 		if ("password" in data) {
-			user.password_hash = generatePasswordHash(data.password);
+			user.password_hash = await generatePasswordHash(data.password);
 		} else if ("password_hash" in data) {
-			user.password_hash = generatePasswordHash(data.password_hash);
+			user.password_hash = await generatePasswordHash(data.password_hash);
 		}
 		if ("firstname" in data) {
 			user.firstname = data.firstname;

@@ -1,13 +1,16 @@
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { promisify } from "util";
 import db from "./db.js";
+
+const pbkdf2 = promisify(crypto.pbkdf2);
 
 export const ROLE_STUDENT = "student"
 export const ROLE_REFERENT = "referent"
 export const ROLE_OVERSEAS = "staff"
 
 // Verifies werkzeug-format hashes: "pbkdf2:sha256:<iterations>$<salt>$<hexhash>"
-export function checkPasswordHash(hashed_password, plaintext_password) {
+export async function checkPasswordHash(hashed_password, plaintext_password) {
     if (!hashed_password || typeof hashed_password !== "string") return false;
     const [method, salt, hashHex] = hashed_password.split("$");
     if (!method || !salt || !hashHex) return false;
@@ -21,7 +24,7 @@ export function checkPasswordHash(hashed_password, plaintext_password) {
     if (!algo || Number.isNaN(iterations)) return false;
 
     const expected = Buffer.from(hashHex, "hex");
-    const derived = crypto.pbkdf2Sync(plaintext_password, salt, iterations, expected.length, algo);
+    const derived = await pbkdf2(plaintext_password, salt, iterations, expected.length, algo);
 
     if (derived.length !== expected.length) return false;
     return crypto.timingSafeEqual(derived, expected);
