@@ -598,7 +598,7 @@ api.get("/api/application/document/:id/download", customJwtRequired(), async (re
 // OK: [POST] /application/document/:id/decision
 // referent approves or rejects an uploaded document (learning agreement / transcript),
 // recording a motivation; decision_date is stamped by a DB trigger
-api.post("/api/application/document/:id/decision", customJwtRequired(), requireRoles(ROLE_REFERENT, ROLE_OVERSEAS), async (req, res) => {
+api.post("/api/application/document/:id/decision", customJwtRequired(), requireRoles(ROLE_REFERENT), async (req, res) => {
 	try {
 		const data = req.body;
 		if (!data || !("status" in data)) {
