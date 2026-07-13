@@ -278,6 +278,10 @@
 
             </div>
 
+            @if (pair.decision_date) {
+              <p class="text-[0.7rem] text-text-muted">decision date: {{ pair.decision_date | date:'dd/MM/yyyy' }}</p>
+            }
+
             @if (pair.status === 'rejected' && pair.notes) {
               <p class="text-[0.7rem] text-red-400/80">rejected: {{ pair.notes }}</p>
             }
@@ -451,6 +455,10 @@
         <p class="text-[0.7rem] text-text-muted italic">No learning agreement uploaded.</p>
       }
 
+      @if (existingDocument && existingDocument.decision_date) {
+        <p class="text-[0.7rem] text-text-muted mt-2">decision date: {{ existingDocument.decision_date | date:'dd/MM/yyyy' }}</p>
+      }
+
       @if (existingDocument && existingDocument.status === 'rejected' && existingDocument.notes) {
         <p class="text-[0.7rem] text-red-400/80 mt-2">rejected: {{ existingDocument.notes }}</p>
       }
@@ -485,6 +493,9 @@
             <span class="mdi mdi-download text-text-muted group-hover:text-blue-400/80 text-base shrink-0 transition-colors duration-100"></span>
           </button>
         </div>
+        @if (existingTranscript.decision_date) {
+          <p class="text-[0.7rem] text-text-muted mt-2">decision date: {{ existingTranscript.decision_date | date:'dd/MM/yyyy' }}</p>
+        }
       </fieldset>
     }
 
