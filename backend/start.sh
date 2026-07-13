@@ -1,2 +1,2 @@
 # for development 
-npm run start:dev
+JWT_SECRET=supersecret  npm run start:dev
