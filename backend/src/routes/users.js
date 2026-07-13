@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+// import jwt from "jsonwebtoken"; // replaced by manual implementation in auth.js (signJwt)
 import express from "express";
 import path from "path";
 import fs from "fs";
@@ -13,6 +13,7 @@ import {
 	checkPasswordHash,
 	requireRoles,
 	user_in_institution,
+	signJwt,
 	ROLE_STUDENT,
 	ROLE_REFERENT,
 	ROLE_OVERSEAS
@@ -70,10 +71,11 @@ api.post("/api/login", async (req, res) => {
         sub: user.id,
         role: user.role,
     };
-    const token = jwt.sign(payload, secret, {
-        algorithm: "HS256",
-        expiresIn: "24h",
-    });
+    // const token = jwt.sign(payload, secret, {
+    //     algorithm: "HS256",
+    //     expiresIn: "24h",
+    // });
+    const token = signJwt(payload, secret, 60 * 60 * 24); // 24h
 
     // strip sensitive fields — equivalent of user.to_dict()
 	user.password_hash=null;
