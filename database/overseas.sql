@@ -1320,7 +1320,7 @@ SELECT pg_catalog.setval('public.exams_id_seq', 101, true);
 -- Name: institutions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: myuser
 --
 
-SELECT pg_catalog.setval('public.institutions_id_seq', 1, false);
+SELECT pg_catalog.setval('public.institutions_id_seq', 20, true);
 
 
 --
