@@ -969,10 +969,6 @@ b7f3d2a91c04
 -- Data for Name: applications; Type: TABLE DATA; Schema: public; Owner: myuser
 --
 
-COPY public.applications (id, year, semester, status, date_submitted, date_arrived, date_departure, notes, referent_id, sending_institution, host_institution, user_id) FROM stdin;
-28	2026	first	closed	2026-07-05 20:32:19.174187+00	2026-07-01	2026-07-30		49	1	6	1
-\.
-
 
 --
 -- Data for Name: exams; Type: TABLE DATA; Schema: public; Owner: myuser
@@ -1114,30 +1110,13 @@ COPY public.institutions (id, name, country, city) FROM stdin;
 -- Data for Name: la_modification_exams; Type: TABLE DATA; Schema: public; Owner: myuser
 --
 
-COPY public.la_modification_exams (id, modification_id, host_exam_id, sending_exam_id, grade, date_passed, status, notes, decision_date) FROM stdin;
-35	19	28	1	-1	\N	approved		2026-07-05 20:32:37.932534+00
-36	19	29	3	-1	\N	approved		2026-07-05 20:32:38.597376+00
-\.
-
-
 --
 -- Data for Name: la_modifications; Type: TABLE DATA; Schema: public; Owner: myuser
 --
 
-COPY public.la_modifications (id, application_id, description, status, decision_date, notes, document_id) FROM stdin;
-19	28	test	rejected	2026-07-05 20:34:15.243035+00	ta	\N
-\.
-
-
 --
 -- Data for Name: mapped_exams; Type: TABLE DATA; Schema: public; Owner: myuser
 --
-
-COPY public.mapped_exams (id, application_id, date_passed, grade, status, decision_date, notes, host_exam_id, sending_exam_id) FROM stdin;
-233	28	2026-07-15	19	approved	2026-07-05 20:35:04.28618+00		28	1
-234	28	2026-07-29	19	approved	2026-07-05 20:35:04.929924+00		29	3
-\.
-
 
 --
 -- Data for Name: partner_institution; Type: TABLE DATA; Schema: public; Owner: myuser
@@ -1189,12 +1168,6 @@ COPY public.partner_institution (id, id_institution, id_partner_institution) FRO
 --
 -- Data for Name: uploaded_documents; Type: TABLE DATA; Schema: public; Owner: myuser
 --
-
-COPY public.uploaded_documents (id, document_type, file_path, date_updated, status, decision_date, notes, user_id, application_id) FROM stdin;
-68	learning_agreement	/app/uploads/applications/28/JOSEPH_FRIGO_learning-agreement-studies.pdf	2026-07-05 20:32:19.235191+00	approved	2026-07-05 20:32:39.739681+00		1	28
-70	transcript	/app/uploads/applications/28/(OLD)FRIGO_JOSEPH_Learning_Agreement.pdf	2026-07-05 20:34:34.12926+00	approved	2026-07-05 20:35:03.226654+00		1	28
-\.
-
 
 --
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: myuser
