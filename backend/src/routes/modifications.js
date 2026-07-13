@@ -52,7 +52,16 @@ api.post("/api/application/:application_id/modification", customJwtRequired(), r
 			return res.status(400).json({ error: "description, document_id and mapping required" });
 		}
 
-		// the updated LA must belong to this application and be a learning_agreement
+		// check that the sent id learning agreeements are different:
+		let alt_doc_id = await db.oneOrNone(
+			`SELECT id FROM uploaded_documents WHERE application_id=$1 AND document_type='learning_agreement' AND id<>$2;`, 
+			[application_id,document_id]
+		); 
+		if(!alt_doc_id) {
+			return res.status(400).json({ error: "a new learning agreement is required" });
+		}
+
+		// the updated LA must belong to this application
 		let doc = await db.oneOrNone(`SELECT * FROM uploaded_documents WHERE id=$1`, [document_id]);
 		if (!doc || doc.application_id != application_id || doc.document_type != "learning_agreement") {
 			return res.status(400).json({ error: "document_id must be a learning_agreement of this application" });
