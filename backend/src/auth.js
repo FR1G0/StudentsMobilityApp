@@ -1,4 +1,4 @@
-// import jwt from "jsonwebtoken"; // replaced by manual implementation below (signJwt/verifyJwt)
+import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { promisify } from "util";
 import db from "./db.js";
@@ -80,83 +80,6 @@ export function getJwtSecret() {
 }
 
 
-//	--- manual JWT (HS256) implementation ---
-//	token format: base64url(header).base64url(payload).base64url(HMAC-SHA256(header + "." + payload, secret))
-
-// this function is needed for the middleware to give specific error messages instead of only generic ones
-function makeError(name, message) {
-    const err = new Error(message);
-    err.name = name;
-    return err;
-}
-
-function b64urlJson(obj) {
-    return Buffer.from(JSON.stringify(obj)).toString("base64url");
-}
-
-function hmacSha256(signingInput, secret) {
-    return crypto.createHmac("sha256", secret).update(signingInput).digest();
-}
-
-//	expiresInSeconds: e.g. 60 * 60 * 24 for 24h
-export function signJwt(payload, secret, expiresInSeconds) {
-    const now = Math.floor(Date.now() / 1000); // JWT times are in seconds, not ms
-    const header = { alg: "HS256", typ: "JWT" };
-    const body = { ...payload, iat: now }; // iat = issued at
-    if (expiresInSeconds) {
-        body.exp = now + expiresInSeconds; // optional, skip it and token never expires
-    }
-
-    // sign header + payload together, so neither can be swapped out
-    const signingInput = `${b64urlJson(header)}.${b64urlJson(body)}`;
-    const signature = hmacSha256(signingInput, secret).toString("base64url");
-    return `${signingInput}.${signature}`;
-}
-
-export function verifyJwt(token, secret) {
-    const parts = token.split(".");
-    if (parts.length !== 3) {
-        throw makeError("JsonWebTokenError", "jwt malformed");
-    }
-    const [headerB64, payloadB64, signatureB64] = parts;
-
-    // read the header first, we need its alg before touching anything else
-    let header;
-    try {
-        header = JSON.parse(Buffer.from(headerB64, "base64url").toString("utf8"));
-    } catch {
-        throw makeError("JsonWebTokenError", "invalid header");
-    }
-    // only HS256 allowed — blocks the classic alg:"none" forgery
-    if (header.alg !== "HS256") {
-        throw makeError("JsonWebTokenError", "algorithm not allowed");
-    }
-
-    // recompute the signature over the exact bytes we received and compare
-    const expected = hmacSha256(`${headerB64}.${payloadB64}`, secret);
-    const actual = Buffer.from(signatureB64, "base64url");
-    // length check first, timingSafeEqual throws if the two differ in size
-    if (actual.length !== expected.length || !crypto.timingSafeEqual(actual, expected)) {
-        throw makeError("JsonWebTokenError", "invalid signature");
-    }
-
-    // signature checked, now the payload can be trusted
-    let payload;
-    try {
-        payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf8"));
-    } catch {
-        throw makeError("JsonWebTokenError", "invalid payload");
-    }
-
-    const now = Math.floor(Date.now() / 1000);
-    if (typeof payload.exp === "number" && now >= payload.exp) {
-        throw makeError("TokenExpiredError", "jwt expired"); // caught by name in the middleware
-    }
-
-    return payload;
-}
-
-
 //	jwt check middleware
 export function customJwtRequired(roles) {
     return async function (req, res, next) {
@@ -174,8 +97,7 @@ export function customJwtRequired(roles) {
 
         let payload;
         try {
-            // payload = jwt.verify(token, secret, { algorithms: ["HS256"] });
-            payload = verifyJwt(token, secret);
+            payload = jwt.verify(token, secret, { algorithms: ["HS256"] });
         } catch (err) {
             if (err.name === "TokenExpiredError") {
                 return res.status(401).json({ error: "token expired" });
