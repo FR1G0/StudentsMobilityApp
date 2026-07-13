@@ -86,11 +86,8 @@ CREATE TABLE applications (
 		'exam_recognition',
 		'closed'
 	)),
-	CONSTRAINT valid_ongoing CHECK(
-		NOT(status='mobility_ongoing' AND date_arrived IS NULL )
-	),
 	CONSTRAINT valid_recognition CHECK(
-		NOT(status='exam_recognition' AND date_departure IS NULL )
+		NOT(status='exam_recognition' AND (date_departure IS NULL OR date_arrived IS NULL))
 	)
 );
 

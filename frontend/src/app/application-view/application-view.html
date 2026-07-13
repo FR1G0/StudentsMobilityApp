@@ -178,6 +178,10 @@
               </span>
             </div>
 
+            @if (mapping.decision_date) {
+              <p class="mt-2 text-[0.7rem] text-text-muted">decision date: {{ mapping.decision_date | date:'dd/MM/yyyy' }}</p>
+            }
+
             <!-- exam result (read-only): during recognition/after closing every role
                  can see the recorded grade and date, but nobody edits it here -->
             @if (application.status === 'exam_recognition' || application.status === 'closed') {
@@ -354,6 +358,10 @@
         </button>
       </div>
 
+      @if (learningAgreement.decision_date) {
+        <p class="mt-2 text-[0.7rem] text-text-muted">decision date: {{ learningAgreement.decision_date | date:'dd/MM/yyyy' }}</p>
+      }
+
       <!-- role based: referent approves/rejects, student/staff read the outcome -->
       @if (user.role === 'referent') {
         <div class="mt-3 flex flex-col gap-2">
@@ -426,6 +434,10 @@
           <span class="mdi mdi-download text-text-muted group-hover:text-blue-400/80 text-base shrink-0 transition-colors duration-100"></span>
         </button>
       </div>
+
+      @if (transcript.decision_date) {
+        <p class="mt-2 text-[0.7rem] text-text-muted">decision date: {{ transcript.decision_date | date:'dd/MM/yyyy' }}</p>
+      }
 
       <!-- role based: referent approves/rejects, student/staff read the outcome -->
       @if (user.role === 'referent') {

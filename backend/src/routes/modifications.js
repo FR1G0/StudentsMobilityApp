@@ -52,10 +52,28 @@ api.post("/api/application/:application_id/modification", customJwtRequired(), r
 			return res.status(400).json({ error: "description, document_id and mapping required" });
 		}
 
-		// the updated LA must belong to this application and be a learning_agreement
+		// the updated LA must belong to this application
 		let doc = await db.oneOrNone(`SELECT * FROM uploaded_documents WHERE id=$1`, [document_id]);
 		if (!doc || doc.application_id != application_id || doc.document_type != "learning_agreement") {
 			return res.status(400).json({ error: "document_id must be a learning_agreement of this application" });
+		}
+
+		// and it must be a NEWLY uploaded learning agreement, not the one already in
+		// force: the current LA of an ongoing mobility is always 'approved' (approving
+		// a modification also stamps its document 'approved'), only a fresh upload is
+		// still 'pending'
+		if (doc.status != "pending") {
+			return res.status(400).json({ error: "a new learning agreement is required" });
+		}
+
+		// reject a document already attached to a previous modification (a rejected
+		// proposal can leave its document behind when no original LA existed)
+		let used = await db.oneOrNone(
+			`SELECT id FROM la_modifications WHERE document_id=$1 LIMIT 1`,
+			[document_id]
+		);
+		if (used) {
+			return res.status(400).json({ error: "a new learning agreement is required" });
 		}
 
 		// ---- single transaction: create proposal, snapshot current, swap mapping ----

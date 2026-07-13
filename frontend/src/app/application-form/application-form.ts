@@ -169,6 +169,7 @@ export class ApplicationForm {
   // loads (or reloads) the exam mappings of the application into examPairs. the
   // status/grade carried by each row is used to drive the exam_recognition inputs,
   // so this must be re-run after a status transition that resets them server-side.
+  // OK:
   private loadExamMappings(then?: () => void) {
     this.applicationsApi.listApplicationExamMappings(this.editApplicationId).subscribe({
       next: res => {
@@ -182,6 +183,7 @@ export class ApplicationForm {
             mapping_id: exam_map.id,
             status: exam_map.status,
             notes: exam_map.notes,
+            decision_date: exam_map.decision_date,
             grade: exam_map.grade > 0 ? exam_map.grade : null,
             date_passed: exam_map.date_passed || ''
           });
@@ -208,10 +210,12 @@ export class ApplicationForm {
   // approved-but-ungraded mapping (approved during the learning agreement phase and
   // reset to 'pending' on entering exam_recognition) still needs a grade, so it
   // stays editable.
+  // OK:
   examResultLocked(pair: ExamPair): boolean {
     return pair.status === 'approved' && pair.grade != null;
   }
 
+  // OK:
   onHostInstitutionChange() {
     this.hostExams = [];
     this.examPairs.forEach(p => p.host_exam_id = 0);
@@ -224,23 +228,29 @@ export class ApplicationForm {
     }
   }
 
+  // OK:
   addExamPair() {
     this.examPairs.push({ local_exam_id: 0, host_exam_id: 0 });
   }
 
+  // OK:
   removeExamPair(index: number) {
     if (this.examPairs.length > 1) {
+      // splice(end, -1)  removes 1 element from the end
       this.examPairs.splice(index, 1);
     }
   }
 
+  // TEST:
   onFileSelected(event: Event) {
+    // cast event to HTMLInputElement
     const input = event.target as HTMLInputElement;
     if (input.files?.length) {
       this.selectedFile = input.files[0];
     }
   }
 
+  // OK:
   removeFile() {
     this.selectedFile = null;
     const input = document.getElementById('la-upload') as HTMLInputElement;
@@ -248,6 +258,7 @@ export class ApplicationForm {
   }
 
   // downloads the given uploaded document by fetching its blob and saving it
+  // OK:
   downloadDocument(doc: UploadedDocument) {
     this.applicationsApi.downloadDocument(doc.id).subscribe({
       next: blob => {
@@ -262,11 +273,13 @@ export class ApplicationForm {
     });
   }
 
+  // OK:
   formatFileSize(bytes: number): string {
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   }
 
+  // TEST:
   submitApplication() {
     // during the mobility the submit button has dedicated behaviours:
     // mobility_ongoing  -> save the arrival date and propose an LA modification
@@ -351,6 +364,7 @@ export class ApplicationForm {
     }
   }
 
+  // TEST:
   private handleFileAndExams(applicationId: number) {
     if (!this.selectedFile) {
       this.handleExamMappings(applicationId);
@@ -369,6 +383,7 @@ export class ApplicationForm {
     }
   }
 
+  // WARN: duplicate? where is the one for the transcript
   private uploadAndInsert(applicationId: number) {
       this.applicationsApi.uploadApplicationDocument(applicationId, this.selectedFile!).subscribe({
         next: res => {
@@ -397,7 +412,7 @@ export class ApplicationForm {
       });
     }
 
-
+  // TEST:
   private handleExamMappings(applicationId: number) {
     const pairKey = (sending: number, host: number) => sending + '->' + host;
     const validPairs = this.examPairs.filter(p => p.local_exam_id > 0 && p.host_exam_id > 0);
@@ -437,6 +452,7 @@ export class ApplicationForm {
     }
   }
 
+  // TEST:
   private insertMappings(applicationId: number, validPairs: ExamPair[]) {
     if (!validPairs.length) {
       this.goToApplications();
@@ -458,6 +474,7 @@ export class ApplicationForm {
     }
   }
 
+  // OK:
   shortenStatus(status: string): string {
     if (status == 'learning_agreement_pending') return 'la pending';
     if (status == 'pre_departure_completed') return 'pre completed';
@@ -471,27 +488,24 @@ export class ApplicationForm {
   // arrival date. end mobility moves it to 'exam_recognition'. the database
   // triggers validate each transition.
 
+  // OK:
   startMobility() {
-    // the backend rejects any data update while in 'pre_departure_completed', so
-    // this transition only moves the status: the mobility dates were already
-    // stored during the earlier phases
     this.changeStatus('mobility_ongoing', 'Mobility started');
   }
 
+  // OK:
   endMobility() {
-    // first save the mobility dates (still allowed while 'mobility_ongoing'),
-    // then move the status through the dedicated status route
+    // send date field and check if server accepts it, the mobility must have valid dates to end
     this.applicationsApi.updateApplication(this.editApplicationId, {
       date_arrived: this.start_date || undefined,
       date_departure: this.end_date || undefined
     }).subscribe({
-      // entering exam_recognition resets every mapped exam to 'pending' server-side
-      // (a grade is now expected): reload the mappings so the grade inputs unlock
       next: () => this.changeStatus('exam_recognition', 'Mobility ended', () => this.loadExamMappings()),
       error: err => this.app.send_notification(this.backendError(err, 'Operation failed'), 'error')
     });
   }
 
+  // OK:
   private changeStatus(newStatus: string, message: string, then?: () => void) {
     // carry the student's notes along with every status transition: they are
     // editable in the phases listed by notesEditable() and must be persisted
@@ -519,6 +533,7 @@ export class ApplicationForm {
   // given, proposes an LA modification: the backend snapshots the current
   // mapping and replaces it with the proposed one in a single transaction.
 
+  // OK:
   private submitMobilityChanges() {
     const description = this.modificationDescription.trim();
     if (!description && !this.start_date && !this.end_date) {
@@ -533,6 +548,7 @@ export class ApplicationForm {
       this.proposeModification(description);
       return;
     }
+    // request updates to application data
     this.applicationsApi.updateApplication(this.editApplicationId, {
       date_arrived: this.start_date || undefined,
       date_departure: this.end_date || undefined
@@ -542,12 +558,14 @@ export class ApplicationForm {
           this.finishSubmit('Mobility dates saved');
           return;
         }
+        // if there is a desc for mobility then do it
         this.proposeModification(description);
       },
       error: err => this.failSubmit(err, 'Could not save the mobility dates')
     });
   }
 
+  // OK:
   private proposeModification(description: string) {
     // the backend requires the learning agreement document of the application:
     // either the existing one or a replacement the student just selected
@@ -599,12 +617,14 @@ export class ApplicationForm {
   // yielded. the previous learning agreement is deliberately kept: rejecting the
   // modification deletes the proposed document (backend), which rolls the
   // application back to the previous learning agreement.
+  // TEST:
   private ensureLearningAgreement(next: (documentId: number) => void) {
     if (!this.selectedFile) {
       next(this.existingDocument!.id);
       return;
     }
 
+    // WARN: duplicate found
     const uploadAndInsert = () => {
       this.applicationsApi.uploadApplicationDocument(this.editApplicationId, this.selectedFile!).subscribe({
         next: res => {
@@ -649,6 +669,7 @@ export class ApplicationForm {
   // through the dedicated backend route. the mobility dates are already locked in
   // this phase, so no application update is made here.
 
+  // OK:
   private submitRecognitionResults() {
     const results = this.gradedPairs();
     if (results.length === 0) {
@@ -662,7 +683,8 @@ export class ApplicationForm {
     this.submitExamResults(results);
   }
 
-  // exam pairs carrying a grade and a date to register (approved ones are locked)
+  // exam pairs: returns exams that are graded
+  // OK:
   private gradedPairs(): ExamPair[] {
     const results: ExamPair[] = [];
     for (let pair of this.examPairs) {
@@ -673,6 +695,7 @@ export class ApplicationForm {
     return results;
   }
 
+  // OK:
   private submitExamResults(results: ExamPair[]) {
     let done = 0;
     const finish = () => {
@@ -695,6 +718,7 @@ export class ApplicationForm {
   // loads the LA modification proposals of the application (the backend returns
   // only the pending ones), then lets the caller continue: the documents load
   // depends on this list to pick the learning agreement to display
+  // TEST: (then?)
   private loadModifications(then?: () => void) {
     this.applicationsApi.listModifications(this.editApplicationId).subscribe({
       next: res => this.modifications = res,
@@ -730,6 +754,7 @@ export class ApplicationForm {
   }
 
   // ends a submit with a success notification and goes back to the list
+  // OK:
   private finishSubmit(message: string) {
     this.isSubmitting = false;
     this.app.send_notification(message, 'success');
@@ -737,6 +762,7 @@ export class ApplicationForm {
   }
 
   // ends a submit surfacing the backend error to the user
+  // OK:
   private failSubmit(err: any, fallback: string) {
     if (err) console.error(err);
     this.isSubmitting = false;
@@ -750,6 +776,7 @@ export class ApplicationForm {
   // 'created'/'learning_agreement_pending' the notes are saved through the
   // regular insert/update; in 'mobility_ongoing'/'exam_recognition' they ride
   // along with the status transition (see changeStatus).
+  // OK:
   notesEditable(): boolean {
     if (this.action === 'create') {
       return true;
@@ -760,6 +787,7 @@ export class ApplicationForm {
   }
 
   // core application fields are locked once the pre-departure checks are done
+  // OK:
   coreFieldsLocked(): boolean {
     return this.action === 'edit' &&
       (this.status === 'pre_departure_completed' || this.status === 'mobility_ongoing' ||
@@ -767,6 +795,7 @@ export class ApplicationForm {
   }
 
   // the exam pairs stay editable during the mobility (to propose modifications)
+  // OK:
   examPairsLocked(): boolean {
     return this.action === 'edit' &&
       (this.status === 'pre_departure_completed' || this.status === 'exam_recognition' ||
@@ -775,12 +804,14 @@ export class ApplicationForm {
 
   // both dates stay editable only while 'mobility_ongoing'. they are locked in
   // 'pre_departure_completed', 'exam_recognition' and 'closed'.
+  // OK:
   startDateLocked(): boolean {
     return this.action === 'edit' &&
       (this.status === 'pre_departure_completed' || this.status === 'exam_recognition' ||
         this.status === 'closed');
   }
 
+  // OK:
   endDateLocked(): boolean {
     return this.action === 'edit' &&
       (this.status === 'pre_departure_completed' || this.status === 'exam_recognition' ||
@@ -790,11 +821,13 @@ export class ApplicationForm {
   // no document can be uploaded or replaced while the application sits in
   // 'pre_departure_completed' or after closure; during 'mobility_ongoing' the
   // learning agreement stays replaceable to propose modifications
+  // OK:
   learningAgreementLocked(): boolean {
     return this.coreFieldsLocked() && this.status !== 'mobility_ongoing';
   }
 
   // text of the single submit button, based on the workflow phase
+  // OK:
   submitLabel(): string {
     if (this.action !== 'edit') return 'Submit Application';
     if (this.status === 'mobility_ongoing') return 'Submit Modification';
@@ -802,6 +835,7 @@ export class ApplicationForm {
     return 'Save Changes';
   }
 
+  // OK:
   onTranscriptSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files?.length) {
@@ -810,6 +844,7 @@ export class ApplicationForm {
   }
 
   // uploads the transcript of records during 'exam_recognition'
+  // WARN: duplicate uploading
   uploadTranscript() {
     if (!this.transcriptFile) {
       this.app.send_notification('Please select a transcript file', 'warning');
@@ -840,7 +875,7 @@ export class ApplicationForm {
     });
   }
 
-  // reloads the transcript document after a successful upload
+  // OK:
   private reloadTranscript() {
     this.applicationsApi.listApplicationDocuments(this.editApplicationId).subscribe({
       next: res => {
@@ -861,6 +896,7 @@ interface ExamPair {
   // decision info coming from the existing mapping (used to show a rejection note)
   status?: string;
   notes?: string;
+  decision_date?: string | null;
   // exam result filled in by the student during 'exam_recognition'
   grade?: number | null;
   date_passed?: string;
