@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict FS3jMbHdEXJ30TM9WOO2glozu5yS0myiG6VcpfJA4ScVYBnYawodB4f8rVIFZky
+\restrict wNEobqWDOqwnRxyUHcgnfLKT1DQjKhasW6oZ96WW6jLCeXE3RKvGQTW8JHcw3hD
 
 -- Dumped from database version 17.10
 -- Dumped by pg_dump version 18.4
@@ -456,6 +456,25 @@ $$;
 ALTER FUNCTION public.mirror_partner_institution() OWNER TO myuser;
 
 --
+-- Name: mirror_remove_institution_partnership(); Type: FUNCTION; Schema: public; Owner: myuser
+--
+
+CREATE FUNCTION public.mirror_remove_institution_partnership() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	DELETE FROM partner_institution
+	WHERE id_institution=OLD.id_partner_institution
+	AND id_partner_institution=OLD.id_institution;
+
+	RETURN OLD;
+END;
+$$;
+
+
+ALTER FUNCTION public.mirror_remove_institution_partnership() OWNER TO myuser;
+
+--
 -- Name: set_modification_decision_date(); Type: FUNCTION; Schema: public; Owner: myuser
 --
 
@@ -547,8 +566,8 @@ CREATE TABLE public.applications (
     CONSTRAINT different_host_sending CHECK ((host_institution <> sending_institution)),
     CONSTRAINT valid_academic_year CHECK ((((date_arrived IS NULL) OR ((EXTRACT(year FROM date_arrived) = (year)::numeric) OR (EXTRACT(year FROM date_arrived) = ((year + 1))::numeric))) AND ((date_departure IS NULL) OR ((EXTRACT(year FROM date_departure) = (year)::numeric) OR (EXTRACT(year FROM date_departure) = ((year + 1))::numeric))))),
     CONSTRAINT valid_mobility_dates CHECK (((date_arrived IS NULL) OR (date_departure IS NULL) OR (date_departure >= date_arrived))),
-    CONSTRAINT valid_semester CHECK (((semester)::text = ANY ((ARRAY['first'::character varying, 'second'::character varying, 'full'::character varying])::text[]))),
-    CONSTRAINT valid_status CHECK (((status)::text = ANY ((ARRAY['created'::character varying, 'learning_agreement_pending'::character varying, 'pre_departure_completed'::character varying, 'mobility_ongoing'::character varying, 'exam_recognition'::character varying, 'closed'::character varying])::text[])))
+    CONSTRAINT valid_semester CHECK (((semester)::text = ANY (ARRAY[('first'::character varying)::text, ('second'::character varying)::text, ('full'::character varying)::text]))),
+    CONSTRAINT valid_status CHECK (((status)::text = ANY (ARRAY[('created'::character varying)::text, ('learning_agreement_pending'::character varying)::text, ('pre_departure_completed'::character varying)::text, ('mobility_ongoing'::character varying)::text, ('exam_recognition'::character varying)::text, ('closed'::character varying)::text])))
 );
 
 
@@ -702,7 +721,7 @@ CREATE TABLE public.la_modifications (
     decision_date timestamp with time zone,
     notes text,
     document_id integer,
-    CONSTRAINT valid_modification_status CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[])))
+    CONSTRAINT valid_modification_status CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('approved'::character varying)::text, ('rejected'::character varying)::text])))
 );
 
 
@@ -746,7 +765,7 @@ CREATE TABLE public.mapped_exams (
     sending_exam_id integer NOT NULL,
     CONSTRAINT valid_grade CHECK (((grade = '-1'::integer) OR ((grade > 17) AND (grade <= 30)))),
     CONSTRAINT valid_grade_date CHECK ((((grade = '-1'::integer) AND (date_passed IS NULL)) OR ((grade <> '-1'::integer) AND (date_passed IS NOT NULL)))),
-    CONSTRAINT valid_status CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[])))
+    CONSTRAINT valid_status CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('approved'::character varying)::text, ('rejected'::character varying)::text])))
 );
 
 
@@ -824,8 +843,8 @@ CREATE TABLE public.uploaded_documents (
     notes text,
     user_id integer NOT NULL,
     application_id integer NOT NULL,
-    CONSTRAINT valid_status CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[]))),
-    CONSTRAINT valid_type CHECK (((document_type)::text = ANY ((ARRAY['learning_agreement'::character varying, 'transcript'::character varying])::text[])))
+    CONSTRAINT valid_status CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('approved'::character varying)::text, ('rejected'::character varying)::text]))),
+    CONSTRAINT valid_type CHECK (((document_type)::text = ANY (ARRAY[('learning_agreement'::character varying)::text, ('transcript'::character varying)::text])))
 );
 
 
@@ -969,6 +988,9 @@ b7f3d2a91c04
 -- Data for Name: applications; Type: TABLE DATA; Schema: public; Owner: myuser
 --
 
+COPY public.applications (id, year, semester, status, date_submitted, date_arrived, date_departure, notes, referent_id, sending_institution, host_institution, user_id) FROM stdin;
+\.
+
 
 --
 -- Data for Name: exams; Type: TABLE DATA; Schema: public; Owner: myuser
@@ -1110,13 +1132,25 @@ COPY public.institutions (id, name, country, city) FROM stdin;
 -- Data for Name: la_modification_exams; Type: TABLE DATA; Schema: public; Owner: myuser
 --
 
+COPY public.la_modification_exams (id, modification_id, host_exam_id, sending_exam_id, grade, date_passed, status, notes, decision_date) FROM stdin;
+\.
+
+
 --
 -- Data for Name: la_modifications; Type: TABLE DATA; Schema: public; Owner: myuser
 --
 
+COPY public.la_modifications (id, application_id, description, status, decision_date, notes, document_id) FROM stdin;
+\.
+
+
 --
 -- Data for Name: mapped_exams; Type: TABLE DATA; Schema: public; Owner: myuser
 --
+
+COPY public.mapped_exams (id, application_id, date_passed, grade, status, decision_date, notes, host_exam_id, sending_exam_id) FROM stdin;
+\.
+
 
 --
 -- Data for Name: partner_institution; Type: TABLE DATA; Schema: public; Owner: myuser
@@ -1168,6 +1202,10 @@ COPY public.partner_institution (id, id_institution, id_partner_institution) FRO
 --
 -- Data for Name: uploaded_documents; Type: TABLE DATA; Schema: public; Owner: myuser
 --
+
+COPY public.uploaded_documents (id, document_type, file_path, date_updated, status, decision_date, notes, user_id, application_id) FROM stdin;
+\.
+
 
 --
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: myuser
@@ -1279,63 +1317,63 @@ COPY public.users (id, email, password_hash, role, firstname, lastname, id_insti
 -- Name: applications_id_seq; Type: SEQUENCE SET; Schema: public; Owner: myuser
 --
 
-SELECT pg_catalog.setval('public.applications_id_seq', 60, true);
+SELECT pg_catalog.setval('public.applications_id_seq', 1, false);
 
 
 --
 -- Name: exams_id_seq; Type: SEQUENCE SET; Schema: public; Owner: myuser
 --
 
-SELECT pg_catalog.setval('public.exams_id_seq', 101, true);
+SELECT pg_catalog.setval('public.exams_id_seq', 101, false);
 
 
 --
 -- Name: institutions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: myuser
 --
 
-SELECT pg_catalog.setval('public.institutions_id_seq', 20, true);
+SELECT pg_catalog.setval('public.institutions_id_seq', 21, false);
 
 
 --
 -- Name: la_modification_exams_id_seq; Type: SEQUENCE SET; Schema: public; Owner: myuser
 --
 
-SELECT pg_catalog.setval('public.la_modification_exams_id_seq', 63, true);
+SELECT pg_catalog.setval('public.la_modification_exams_id_seq', 1, false);
 
 
 --
 -- Name: la_modifications_id_seq; Type: SEQUENCE SET; Schema: public; Owner: myuser
 --
 
-SELECT pg_catalog.setval('public.la_modifications_id_seq', 49, true);
+SELECT pg_catalog.setval('public.la_modifications_id_seq', 1, false);
 
 
 --
 -- Name: mapped_exams_id_seq; Type: SEQUENCE SET; Schema: public; Owner: myuser
 --
 
-SELECT pg_catalog.setval('public.mapped_exams_id_seq', 254, true);
+SELECT pg_catalog.setval('public.mapped_exams_id_seq', 1, false);
 
 
 --
 -- Name: partner_institution_id_seq; Type: SEQUENCE SET; Schema: public; Owner: myuser
 --
 
-SELECT pg_catalog.setval('public.partner_institution_id_seq', 41, true);
+SELECT pg_catalog.setval('public.partner_institution_id_seq', 42, false);
 
 
 --
 -- Name: uploaded_documents_id_seq; Type: SEQUENCE SET; Schema: public; Owner: myuser
 --
 
-SELECT pg_catalog.setval('public.uploaded_documents_id_seq', 100, true);
+SELECT pg_catalog.setval('public.uploaded_documents_id_seq', 1, false);
 
 
 --
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: myuser
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 99, true);
+SELECT pg_catalog.setval('public.users_id_seq', 99, false);
 
 
 --
@@ -1553,6 +1591,13 @@ CREATE TRIGGER mapped_exam_update_status_check BEFORE UPDATE ON public.mapped_ex
 
 
 --
+-- Name: partner_institution partner_institution_removal; Type: TRIGGER; Schema: public; Owner: myuser
+--
+
+CREATE TRIGGER partner_institution_removal AFTER DELETE ON public.partner_institution FOR EACH ROW EXECUTE FUNCTION public.mirror_remove_institution_partnership();
+
+
+--
 -- Name: partner_institution partner_institution_symmetry; Type: TRIGGER; Schema: public; Owner: myuser
 --
 
@@ -1731,5 +1776,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict FS3jMbHdEXJ30TM9WOO2glozu5yS0myiG6VcpfJA4ScVYBnYawodB4f8rVIFZky
+\unrestrict wNEobqWDOqwnRxyUHcgnfLKT1DQjKhasW6oZ96WW6jLCeXE3RKvGQTW8JHcw3hD
 
