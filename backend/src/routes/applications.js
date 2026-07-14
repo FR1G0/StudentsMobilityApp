@@ -553,7 +553,11 @@ api.post("/api/application/document/:id/delete", customJwtRequired(), requireRol
 		}
 
 		// prevent document deletion when associated application is in a non adequate status
-		if (!["learning_agreement_pending", "created", "mobility_ongoing"].includes(application.status)) {
+		if (!["learning_agreement_pending", "created", "mobility_ongoing"].includes(application.status) && application.document_type === 'learning_agreement') {
+			return res.status(403).json({ status: "failed", error: `cannot delete this document when application is in ${application.status}` });
+		}
+		
+		if(application.status != 'exam_recognition' && application.document_type === 'transcript') {
 			return res.status(403).json({ status: "failed", error: `cannot delete this document when application is in ${application.status}` });
 		}
 

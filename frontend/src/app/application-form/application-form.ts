@@ -773,13 +773,38 @@ export class ApplicationForm {
     }
   }
 
+  removeTranscriptFile() {
+    this.transcriptFile = null;
+    const input = document.getElementById('tor-upload') as HTMLInputElement;
+    if (input) input.value = '';
+  }
+
+  // whether the student can replace the uploaded transcript in the current phase
+  transcriptReplaceable(): boolean {
+    return this.action === 'edit' && this.user.role === 'student' &&
+      this.status === 'exam_recognition';
+  }
+
   // uploads the transcript of records during 'exam_recognition'
   uploadTranscript() {
     if (!this.transcriptFile) {
       this.app.send_notification('Please select a transcript file', 'warning');
       return;
     }
-    this.applicationsApi.uploadApplicationDocument(this.editApplicationId, this.transcriptFile).subscribe({
+
+    // when replacing, remove the previous transcript row first
+    if (this.existingTranscript) {
+      this.applicationsApi.deleteApplicationDocument(this.existingTranscript.id).subscribe({
+        error: err => console.error(err),
+        complete: () => this.uploadAndInsertTranscript()
+      });
+    } else {
+      this.uploadAndInsertTranscript();
+    }
+  }
+
+  private uploadAndInsertTranscript() {
+    this.applicationsApi.uploadApplicationDocument(this.editApplicationId, this.transcriptFile!).subscribe({
       next: res => {
         if (res.status === 'success' && res.file_path) {
           this.applicationsApi.insertApplicationDocument({
@@ -788,7 +813,7 @@ export class ApplicationForm {
             application_id: this.editApplicationId
           }).subscribe({
             next: () => {
-              this.transcriptFile = null;
+              this.removeTranscriptFile();
               this.app.send_notification('Transcript uploaded', 'success');
               this.reloadTranscript();
             },

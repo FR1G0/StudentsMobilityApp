@@ -472,27 +472,65 @@
           <span class="mdi mdi-file-document-outline text-sm"></span>
           Transcript of Records
         </legend>
-        <div class="flex items-center gap-3 px-4 py-3 bg-bg-raised border border-border-default rounded">
-          <span
-            class="mdi text-xl shrink-0"
-            [ngClass]="{
-              'mdi-file-clock-outline text-[#c9a040]':           existingTranscript.status === 'pending',
-              'mdi-file-check-outline text-green-400/80':         existingTranscript.status === 'approved',
-              'mdi-file-document-remove-outline text-red-400/80': existingTranscript.status === 'rejected'
-            }"
-          ></span>
+
+        @if (transcriptFile) {
+          <!-- newly selected replacement file -->
+          <div class="flex items-center gap-3 px-4 py-3 bg-bg-raised border border-border-default rounded mb-3">
+            <span class="mdi mdi-file-pdf-box text-red-400 text-xl shrink-0"></span>
+            <div class="flex flex-col min-w-0 flex-1">
+              <span class="text-[0.8rem] text-text-primary truncate">{{ transcriptFile.name }}</span>
+              <span class="text-[0.65rem] text-text-muted">{{ formatFileSize(transcriptFile.size) }}</span>
+            </div>
+            <button
+              type="button"
+              (click)="removeTranscriptFile()"
+              class="w-7 h-7 flex items-center justify-center rounded text-text-muted hover:text-red-400/80 hover:bg-red-500/10 transition-all duration-100 shrink-0"
+            >
+              <span class="mdi mdi-close text-base"></span>
+            </button>
+          </div>
           <button
             type="button"
-            (click)="downloadDocument(existingTranscript)"
-            class="group flex items-center gap-2 min-w-0 flex-1 text-left"
+            (click)="uploadTranscript()"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded text-[0.7rem] font-medium bg-[#101e14] border border-[#1a4022] text-[#4db864] hover:bg-[#13261a] transition-all duration-150"
           >
-            <div class="flex flex-col min-w-0 flex-1">
-              <span class="text-[0.8rem] text-text-primary truncate group-hover:text-blue-400/80 transition-colors duration-100">{{ existingTranscript.file_path.split('/').pop() }}</span>
-              <span class="text-[0.65rem] text-text-muted">Already uploaded · {{ existingTranscript.status }} · click to download</span>
-            </div>
-            <span class="mdi mdi-download text-text-muted group-hover:text-blue-400/80 text-base shrink-0 transition-colors duration-100"></span>
+            <span class="mdi mdi-upload text-sm"></span>
+            Upload Transcript
           </button>
-        </div>
+        } @else {
+          <div class="flex items-center gap-3 px-4 py-3 bg-bg-raised border border-border-default rounded">
+            <span
+              class="mdi text-xl shrink-0"
+              [ngClass]="{
+                'mdi-file-clock-outline text-[#c9a040]':           existingTranscript.status === 'pending',
+                'mdi-file-check-outline text-green-400/80':         existingTranscript.status === 'approved',
+                'mdi-file-document-remove-outline text-red-400/80': existingTranscript.status === 'rejected'
+              }"
+            ></span>
+            <button
+              type="button"
+              (click)="downloadDocument(existingTranscript)"
+              class="group flex items-center gap-2 min-w-0 flex-1 text-left"
+            >
+              <div class="flex flex-col min-w-0 flex-1">
+                <span class="text-[0.8rem] text-text-primary truncate group-hover:text-blue-400/80 transition-colors duration-100">{{ existingTranscript.file_path.split('/').pop() }}</span>
+                <span class="text-[0.65rem] text-text-muted">Already uploaded · {{ existingTranscript.status }} · click to download</span>
+              </div>
+              <span class="mdi mdi-download text-text-muted group-hover:text-blue-400/80 text-base shrink-0 transition-colors duration-100"></span>
+            </button>
+            @if (transcriptReplaceable()) {
+              <label
+                for="tor-upload"
+                class="flex items-center gap-1 px-2.5 py-1 rounded text-[0.65rem] text-text-secondary border border-border-default hover:border-border-strong hover:bg-bg-overlay cursor-pointer transition-all duration-100 shrink-0"
+              >
+                <span class="mdi mdi-swap-horizontal text-xs"></span>
+                Replace
+              </label>
+            }
+            <input id="tor-upload" name="transcript" type="file" accept=".pdf" class="sr-only" (change)="onTranscriptSelected($event)" />
+          </div>
+        }
+
         @if (existingTranscript.decision_date) {
           <p class="text-[0.7rem] text-text-muted mt-2">decision date: {{ existingTranscript.decision_date | date:'dd/MM/yyyy' }}</p>
         }
