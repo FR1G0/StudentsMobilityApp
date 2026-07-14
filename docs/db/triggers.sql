@@ -457,6 +457,22 @@ AFTER INSERT ON partner_institution
 FOR EACH ROW
 	EXECUTE FUNCTION mirror_partner_institution();
 
+-- after a DELETE on partner_institution, removes the reciprocal row (B -> A) too, so the partnership stays symmetrical.
+CREATE OR REPLACE FUNCTION mirror_remove_institution_partnership() RETURNS TRIGGER AS $$
+BEGIN
+	DELETE FROM partner_institution
+	WHERE id_institution=OLD.id_partner_institution
+	AND id_partner_institution=OLD.id_institution;
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER partner_institution_removal
+AFTER DELETE ON partner_institution
+FOR EACH ROW
+	EXECUTE FUNCTION mirror_remove_institution_partnership();
+
 
 -- when the status of a la_modification changes to 'approved' or 'rejected', automatically stamps decision_date with the current timestamp.
 CREATE OR REPLACE FUNCTION set_modification_decision_date() RETURNS TRIGGER AS $$
