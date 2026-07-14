@@ -9,7 +9,7 @@ import {
 import { extractDbError } from "./api.js";
 const api = express.Router();
 
-// OK: [GET] /institutions
+// [GET] /api/institutions
 // returns the list of all institutions, accessible to everyone
 api.get("/api/institutions", async (req, res) => {
 	try {
@@ -20,26 +20,7 @@ api.get("/api/institutions", async (req, res) => {
 	}
 })
 
-// WARN: (how to restrict this kind of access) [POST] /institution/insert
-// inserts a new institution row (staff only)
-api.post("/api/institution/insert", customJwtRequired(), requireRoles(ROLE_OVERSEAS), async (req, res) => {
-	try {
-		const data = req.body;
-		if (!data) {
-			return res.status(400).json({ status: "failed", error: "missing body" });
-		}
-
-		await db.none(
-			`INSERT INTO institutions (name, country, city) VALUES ($1,$2,$3)`,
-			[data.name, data.country, data.city]
-		);
-		res.status(200).json({ status: "success" });
-	} catch (error) {
-		res.status(500).json({ status: "failed", error: extractDbError(error) });
-	}
-})
-
-// OK: [GET] /institution/info/:id
+// [GET] /api/institution/info/:id
 // returns information associated to the institution
 api.get("/api/institution/info/:id", async (req, res) => {
 	try {
@@ -54,7 +35,7 @@ api.get("/api/institution/info/:id", async (req, res) => {
 	}
 })
 
-// OK: [POST] /institution/update/:id
+// [POST] /api/institution/update/:id
 // updates an existing institution row (staff only)
 api.post("/api/institution/update/:id", customJwtRequired(), requireRoles(ROLE_OVERSEAS), async (req, res) => {
 	try {
@@ -93,7 +74,7 @@ api.post("/api/institution/update/:id", customJwtRequired(), requireRoles(ROLE_O
 	}
 })
 
-// OK: [GET] /institution/:id_institution/partners
+// [GET] /api/institution/:id_institution/partners
 // returns the list of partner institution mappings linked to the given institution
 api.get("/api/institution/:id_institution/partners", customJwtRequired(), async (req, res) => {
 	try {
@@ -125,7 +106,7 @@ api.get("/api/institution/:id_institution/partners", customJwtRequired(), async 
 	}
 })
 
-// OK: [GET] /institution/:id/referents
+// [GET] /api/institution/:id/referents
 // returns the list of referents (users with role=referent) associated to the institution
 api.get("/api/institution/:id/referents", customJwtRequired(), async (req, res) => {
 	try {
@@ -142,7 +123,7 @@ api.get("/api/institution/:id/referents", customJwtRequired(), async (req, res) 
 	}
 })
 
-// OK: [GET] /institution/:id/students
+// [GET] /api/institution/:id/students
 // returns the list of students associated to the institution
 api.get("/api/institution/:id/students", customJwtRequired(), async (req, res) => {
 	try {
@@ -159,7 +140,7 @@ api.get("/api/institution/:id/students", customJwtRequired(), async (req, res) =
 	}
 })
 
-// OK: [GET] /institution/:id/staff
+// [GET] /api/institution/:id/staff
 // returns the list of staff members associated to the institution
 api.get("/api/institution/:id/staff", customJwtRequired(), async (req, res) => {
 	try {
@@ -176,7 +157,7 @@ api.get("/api/institution/:id/staff", customJwtRequired(), async (req, res) => {
 	}
 })
 
-// OK: [GET] /institution/:id/exams
+// [GET] /api/institution/:id/exams
 // returns the list of exams associated to the institution
 api.get("/api/institution/:id/exams", customJwtRequired(), async (req, res) => {
 	try {
@@ -193,7 +174,7 @@ api.get("/api/institution/:id/exams", customJwtRequired(), async (req, res) => {
 	}
 })
 
-// OK: [POST] /institution/partner/insert
+// [POST] /api/institution/partner/insert
 // inserts a new partner_institution row to link two institutions
 api.post("/api/institution/partner/insert", customJwtRequired(), requireRoles(ROLE_OVERSEAS), async (req, res) => {
 	try {
@@ -216,7 +197,7 @@ api.post("/api/institution/partner/insert", customJwtRequired(), requireRoles(RO
 	}
 })
 
-// OK: [POST] /institution/partner/:id/delete
+// [POST] /api/institution/partner/:id/delete
 // deletes a partner_institution mapping using the row id
 api.post("/api/institution/partner/:id/delete", customJwtRequired(), requireRoles(ROLE_OVERSEAS), async (req, res) => {
 	try {
@@ -236,9 +217,9 @@ api.post("/api/institution/partner/:id/delete", customJwtRequired(), requireRole
 	}
 })
 
-// NOTE: [POST] /institution/partner/:id/update
+// [POST] /api/institution/partner/:id/update
 // updates an existing partner_institution mapping using the row id
-// WARN: a bit weird to update a partnership, but NOT logically wrong, let's keep it.
+// WARN: a bit weird to update a partnership, but NOT logically wrong, so let's keep it :).
 api.post("/api/institution/partner/:id/update", customJwtRequired(), requireRoles(ROLE_OVERSEAS), async (req, res) => {
 	try {
 		const data = req.body;

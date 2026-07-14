@@ -130,18 +130,11 @@ export class ApplicationView {
     // load the exam mappings of the application
     this.reloadMappings();
 
-    // load the learning agreement modification proposals first (visible to every
-    // role): when one is pending, its document is the learning agreement to
-    // display (see loadDocuments)
+    // load the modification proposals first: a pending one decides which LA to show
     this.loadModifications(() => this.loadDocuments());
   }
 
-  // loads the documents (learning agreement + transcript of records). the
-  // learning agreement to display is the one proposed by the pending
-  // modification (its document_id) when there is one; otherwise it falls back
-  // to the latest learning agreement of the application. the fallback is what
-  // implements the rollback: rejecting a modification deletes its document, so
-  // the previous LA is what remains.
+  // loads the documents; shows the pending modification's LA, else the latest one
   private loadDocuments() {
     this.applicationsApi.listApplicationDocuments(this.applicationId).subscribe({
       next: res => {
@@ -234,8 +227,7 @@ export class ApplicationView {
   }
 
   // ---- Referent decisions on LA modification proposals ----
-  // approving keeps the proposed mapping; rejecting restores the previous one
-  // (done atomically by the backend), so the mappings are reloaded afterwards.
+  // approving keeps the proposed mapping, rejecting restores the previous one
 
   approveModification(mod: LAModification) {
     this.sendModificationDecision(mod, 'approved', '');
@@ -261,8 +253,7 @@ export class ApplicationView {
         mod.notes = reason;
         this.app.send_notification('Modification ' + status, 'success');
         this.reloadMappings();
-        // a rejection deletes the proposed document on the backend, so the
-        // displayed learning agreement must roll back to the previous one
+        // a rejection rolls the displayed learning agreement back to the previous one
         this.loadDocuments();
       },
       error: err => this.app.send_notification(this.readError(err), 'error'),
@@ -270,9 +261,7 @@ export class ApplicationView {
     });
   }
 
-  // loads the LA modification proposals of the application (the backend returns
-  // only the pending ones), then lets the caller continue: the documents load
-  // depends on this list to pick the learning agreement to display
+  // loads the pending LA modification proposals, then runs the callback
   private loadModifications(then?: () => void) {
     this.applicationsApi.listModifications(this.applicationId).subscribe({
       next: res => this.modifications = res,
@@ -297,8 +286,7 @@ export class ApplicationView {
   }
 
   // ---- Referent decisions on the learning agreement ----
-  // approving the LA moves the application to 'created';
-  // rejecting it moves the application to 'learning_agreement_pending' and needs a reason.
+  // approve moves to 'created', reject moves to 'learning_agreement_pending'
 
   approveLearningAgreement() {
     if (!this.learningAgreement) {
@@ -345,9 +333,7 @@ export class ApplicationView {
     });
   }
 
-  // updates the application status and notifies the user when done.
-  // if a database trigger rejects the transition the backend returns an error,
-  // which we surface to the user as a notification.
+  // updates the application status, surfacing any trigger error to the user
   private setApplicationStatus(status: string, successMessage: string) {
     this.applicationsApi.updateApplicationStatus(this.applicationId, { status: status }).subscribe({
       next: res => {
@@ -364,8 +350,7 @@ export class ApplicationView {
   }
 
   // ---- Staff: advance the application through its workflow ----
-  // the business checks are enforced by database triggers, so if the conditions
-  // are not met it is the database that returns the error (handled above).
+  // database triggers enforce the checks and reject invalid transitions
 
   // moves the application forward to 'pre_departure_completed'
   proceedToPreDeparture() {

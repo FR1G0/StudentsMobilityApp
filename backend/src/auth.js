@@ -52,6 +52,7 @@ export function user_in_institution(user, id_institution) {
 	return user.id_institution == id_institution;
 }
 
+//	boolean function that returns true if user has access to a given application
 export function can_view_application(application, user, role) {
 	if(!application.user_id || !user.id)
 		return false;
