@@ -12,7 +12,7 @@ import {
 import { extractDbError } from "./api.js";
 const api = express.Router();
 
-// OK: [GET] /exam/list/:id_institution
+// [GET] /api/exam/list/:id_institution
 // returns the list of exam rows that belong to the given institution
 api.get("/api/exam/list/:id_inst", customJwtRequired(), async (req, res) => {
 	try {
@@ -23,7 +23,7 @@ api.get("/api/exam/list/:id_inst", customJwtRequired(), async (req, res) => {
 	}
 })
 
-// OK: [GET] /exam/:id
+// [GET] /api/exam/:id
 // returns the information of the exam row with the given id
 api.get("/api/exam/:id", customJwtRequired(), async (req, res) => {
 	try {
@@ -37,7 +37,7 @@ api.get("/api/exam/:id", customJwtRequired(), async (req, res) => {
 	}
 })
 
-// OK: [POST] /exam/insert
+// [POST] /api/exam/insert
 // inserts a new exam row using the json body data
 api.post("/api/exam/insert", customJwtRequired(), requireRoles(ROLE_OVERSEAS), async (req, res) => {
 	try {
@@ -46,7 +46,7 @@ api.post("/api/exam/insert", customJwtRequired(), requireRoles(ROLE_OVERSEAS), a
 			return res.status(400).json({ status: "failed", error: "missing body" });
 		}
 
-		// validate user access
+		// validate user access by checking the institution to which the staff user belongs to
 		if (!user_in_institution(req.currentUser, data.id_institution)) {
 			return res.status(403).json({ status: "failed", error: "access restricted" });
 		}
@@ -61,7 +61,7 @@ api.post("/api/exam/insert", customJwtRequired(), requireRoles(ROLE_OVERSEAS), a
 	}
 })
 
-// OK: [POST] /exam/delete/:id
+// [POST] /api/exam/delete/:id
 // deletes the exam row identified by :id
 api.post("/api/exam/delete/:id", customJwtRequired(), requireRoles(ROLE_OVERSEAS), async (req, res) => {
 	try {
@@ -70,7 +70,7 @@ api.post("/api/exam/delete/:id", customJwtRequired(), requireRoles(ROLE_OVERSEAS
 			return res.status(404).json({ status: "failed", error: "exam not found" });
 		}
 
-		// validate user access
+		// check if staff belongs to the exam's institution
 		if (!user_in_institution(req.currentUser, exam.id_institution)) {
 			return res.status(403).json({ status: "failed", error: "access restricted" });
 		}
@@ -84,7 +84,7 @@ api.post("/api/exam/delete/:id", customJwtRequired(), requireRoles(ROLE_OVERSEAS
 
 //   -------  EXAM MAPPING SECTION  -------
 
-// TEST: [POST] /exam/mapping/insert/:application_id
+// [POST] /api/exam/mapping/insert/:application_id
 // inserts a new mapped_exams row linking a host exam and a sending exam for an application
 api.post("/api/exam/mapping/insert/:application_id", customJwtRequired(), requireRoles(ROLE_STUDENT), async (req, res) => {
 	try {
@@ -98,6 +98,7 @@ api.post("/api/exam/mapping/insert/:application_id", customJwtRequired(), requir
 		if (!application) {
 			return res.status(404).json({ status: "failed", error: "application not found" });
 		}
+		//	check application access
 		if (!can_view_application(application, req.currentUser, req.currentUserRole)) {
 			return res.status(403).json({ status: "failed", error: "cannot add a mapping to this application" });
 		}
@@ -111,7 +112,7 @@ api.post("/api/exam/mapping/insert/:application_id", customJwtRequired(), requir
 		if ("notes" in data) {
 			notes = data.notes;
 		}
-		// status='pending' and grade=-1 are client-side ORM defaults in flask, the DB columns have no default
+		// status='pending' and grade=-1 are defaults
 		await db.none(
 			`INSERT INTO mapped_exams (application_id, host_exam_id, sending_exam_id, notes, status, grade) VALUES ($1,$2,$3,$4,'pending',-1)`,
 			[application_id, data.host_exam_id, data.sending_exam_id, notes]
@@ -122,7 +123,7 @@ api.post("/api/exam/mapping/insert/:application_id", customJwtRequired(), requir
 	}
 })
 
-// OK: [POST] /exam/mapping/delete/:id
+// [POST] /api/exam/mapping/delete/:id
 // deletes the mapped_exams row identified by :id
 api.post("/api/exam/mapping/delete/:id", customJwtRequired(), requireRoles(ROLE_STUDENT), async (req, res) => {
 	try {
@@ -151,7 +152,8 @@ api.post("/api/exam/mapping/delete/:id", customJwtRequired(), requireRoles(ROLE_
 	}
 })
 
-// NOTE: [POST] /exam/mapping/:id/decision
+// [POST] /api/exam/mapping/:id/decision
+//	referent updates the status (and, if given, notes) of a mapped_exam row
 api.post("/api/exam/mapping/:id/decision", customJwtRequired(), requireRoles(ROLE_REFERENT), async (req, res) => {
 	try {
 		const data = req.body;
@@ -203,7 +205,7 @@ api.post("/api/exam/mapping/:id/decision", customJwtRequired(), requireRoles(ROL
 	}
 })
 
-// OK: [POST] /exam/mapping/passed/:id
+// [POST] /api/exam/mapping/passed/:id
 // registers grade and date_passed on the mapped_exam row of given id
 api.post("/api/exam/mapping/passed/:id", customJwtRequired(), requireRoles(ROLE_STUDENT), async (req, res) => {
 	try {
@@ -261,7 +263,7 @@ api.post("/api/exam/mapping/passed/:id", customJwtRequired(), requireRoles(ROLE_
 	}
 })
 
-// OK: [GET] /exam/mapped/info/status
+// [GET] /api/exam/mapped/info/status
 // returns the list of allowed status values for mapped exams
 api.get("/api/exam/mapped/info/status", (req, res) => {
 	const statuses = ["pending", "approved", "rejected"];

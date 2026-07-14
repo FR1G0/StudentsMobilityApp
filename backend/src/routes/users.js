@@ -21,7 +21,7 @@ import { extractDbError } from "./api.js";
 const api = express.Router();
 
 // creates a werkzeug-format hash: "pbkdf2:sha256:<iterations>$<salt>$<hexhash>"
-// NOTE: generatePasswordHash CANNOT be sync, that could literally freeze the db for 100ms+
+// NOTE: generatePasswordHash CANNOT be sync, that could literally freeze the backend for 100ms+
 async function generatePasswordHash(plaintext_password) {
 	const iterations = 600000;
 	const salt = crypto.randomBytes(8).toString("hex");
@@ -29,11 +29,12 @@ async function generatePasswordHash(plaintext_password) {
 	return "pbkdf2:sha256:" + iterations + "$" + salt + "$" + derived.toString("hex");
 }
 
+// [GET] /api/users 
+// to retrieve a list fo all users in the database
 // FIXED: now users can't just dump the all the users in the db.
-// NOTE: [GET] /api/users to retrieve a list fo all users in the database
 api.get("/api/users", customJwtRequired(), requireRoles(ROLE_OVERSEAS) , async (req,res) => {
 	try {
-    // FIXED: staff can only see own institution users
+		// FIXED: staff can only see own institution users
 		let data = await db.any(`SELECT id,email,role,firstname,lastname,id_institution FROM users WHERE id_institution=$1`, [req.currentUser.id_institution]);
 		res.status(200).json(data);
 	} catch(error) {
@@ -41,7 +42,7 @@ api.get("/api/users", customJwtRequired(), requireRoles(ROLE_OVERSEAS) , async (
 	}
 })
 
-// OK: [POST] /login
+// [POST] /api/login
 // authenticates a user and returns a JWT token along with the user info
 api.post("/api/login", async (req, res) => {
     const data = req.body;
@@ -75,13 +76,13 @@ api.post("/api/login", async (req, res) => {
         expiresIn: "24h",
     });
 
-    // strip sensitive fields — equivalent of user.to_dict()
+    // hardcoded (but works) strip sensitive fields
 	user.password_hash=null;
 
     return res.status(200).json({ token, user: user });
 });
 
-// OK: [GET] /user
+// [GET] /api/user
 // returns the list of all the users inside the same institution as the staff
 api.get("/api/user", customJwtRequired(), requireRoles(ROLE_OVERSEAS), async (req, res) => {
 	try {
@@ -93,7 +94,7 @@ api.get("/api/user", customJwtRequired(), requireRoles(ROLE_OVERSEAS), async (re
 	}
 })
 
-// OK: [GET] /user/:id
+// [GET] /api/user/:id
 // returns the information of the row users using the users' id
 api.get("/api/user/:id", customJwtRequired(), async (req, res) => {
 	try {
@@ -119,7 +120,7 @@ api.get("/api/user/:id", customJwtRequired(), async (req, res) => {
 	}
 })
 
-// OK: [POST] /user/insert
+// [POST] /api/user/insert
 // inserts a new user row into the database using the json body data
 api.post("/api/user/insert", customJwtRequired(), requireRoles(ROLE_OVERSEAS), async (req, res) => {
 	try {
@@ -148,7 +149,7 @@ api.post("/api/user/insert", customJwtRequired(), requireRoles(ROLE_OVERSEAS), a
 	}
 })
 
-// OK: [POST] /user/update
+// [POST] /api/user/update
 // updates an existing user row using the json body data (must contain "id")
 api.post("/api/user/update", customJwtRequired(), requireRoles(ROLE_OVERSEAS), async (req, res) => {
 	try {
@@ -197,7 +198,7 @@ api.post("/api/user/update", customJwtRequired(), requireRoles(ROLE_OVERSEAS), a
 	}
 })
 
-// OK: [POST] /user/delete/:id
+// [POST] /api/user/delete/:id
 // deletes the user row identified by :id
 api.post("/api/user/delete/:id", customJwtRequired(), requireRoles(ROLE_OVERSEAS), async (req, res) => {
 	try {
@@ -221,9 +222,7 @@ api.post("/api/user/delete/:id", customJwtRequired(), requireRoles(ROLE_OVERSEAS
 	}
 })
 
-//   -------  USER INFO SECTION  -------
-
-// OK: [GET] /user/info/role
+// [GET] /api/user/info/role
 // returns the list of allowed user roles
 api.get("/api/user/info/role", (req, res) => {
 	const roles = ["student", "referent", "staff"];

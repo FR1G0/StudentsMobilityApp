@@ -10,12 +10,11 @@ import {
 import { extractDbError } from "./api.js";
 const api = express.Router();
 
-// NOTE: [POST] /application/:application_id/modification
+// [POST] /api/application/:application_id/modification
 // student proposes a Learning Agreement modification during mobility: the current
 // exam mapping is snapshotted into la_modification_exams and replaced by the proposed
-// one, all inside a single transaction. The updated LA must already be uploaded.
-// WARN: the entire exam mapping of the application must be provided, even those not involved in the modification,
-// this function snapshots all the current mappings, if mappings are partially provided, they will be lost upon rejection
+// new learning agreement required.
+// WARN: the entire exam mapping of the application must be provided to create a accurate exam mapping history snapshot.
 api.post("/api/application/:application_id/modification", customJwtRequired(), requireRoles(ROLE_STUDENT), async (req, res) => {
 	try {
 		const data = req.body;
@@ -58,16 +57,12 @@ api.post("/api/application/:application_id/modification", customJwtRequired(), r
 			return res.status(400).json({ error: "document_id must be a learning_agreement of this application" });
 		}
 
-		// and it must be a NEWLY uploaded learning agreement, not the one already in
-		// force: the current LA of an ongoing mobility is always 'approved' (approving
-		// a modification also stamps its document 'approved'), only a fresh upload is
-		// still 'pending'
+		// and it must be a NEWLY uploaded learning agreement
 		if (doc.status != "pending") {
 			return res.status(400).json({ error: "a new learning agreement is required" });
 		}
 
-		// reject a document already attached to a previous modification (a rejected
-		// proposal can leave its document behind when no original LA existed)
+		// reject a document already attached to a previous modification 
 		let used = await db.oneOrNone(
 			`SELECT id FROM la_modifications WHERE document_id=$1 LIMIT 1`,
 			[document_id]
@@ -76,9 +71,8 @@ api.post("/api/application/:application_id/modification", customJwtRequired(), r
 			return res.status(400).json({ error: "a new learning agreement is required" });
 		}
 
-		// ---- single transaction: create proposal, snapshot current, swap mapping ----
+		// create proposal, snapshot current, swap mapping ----
 		const mod_id = await db.tx(async (t) => {
-			// notes='' is a client-side ORM default in flask, the DB column has no default
 			let mod = await t.one(
 				`INSERT INTO la_modifications (application_id, description, document_id, status, notes)
 				 VALUES ($1,$2,$3,'pending','') RETURNING id`,
@@ -102,7 +96,6 @@ api.post("/api/application/:application_id/modification", customJwtRequired(), r
 				if ("notes" in m) {
 					notes = m.notes;
 				}
-				// status='pending' and grade=-1 are client-side ORM defaults in flask, the DB columns have no default
 				await t.none(
 					`INSERT INTO mapped_exams (application_id, host_exam_id, sending_exam_id, notes, status, grade) VALUES ($1,$2,$3,$4,'pending',-1)`,
 					[application_id, m.host_exam_id, m.sending_exam_id, notes]
@@ -118,8 +111,8 @@ api.post("/api/application/:application_id/modification", customJwtRequired(), r
 	}
 })
 
-// NOTE: [GET] /application/:application_id/modifications
-// returns the modification proposals of an application, each with its snapshot
+// [GET] /api/application/:application_id/modifications
+// returns the pending modification proposals of an application, each with its snapshot
 api.get("/api/application/:application_id/modifications", customJwtRequired(), async (req, res) => {
 	try {
 		const application_id = parseInt(req.params.application_id, 10);
@@ -154,10 +147,10 @@ api.get("/api/application/:application_id/modifications", customJwtRequired(), a
 	}
 })
 
-// NOTE: [POST] /modification/:id/decision
+// [POST] /api/modification/:id/decision
 // the application's referent approves or rejects a modification. On reject the
-// previous mapping is restored from the snapshot, atomically. decision_date is
-// stamped by a DB trigger.
+// previous mapping is restored from the snapshot, on approve the mapped exams 
+// and new learning agreement get automatically status=approved.
 api.post("/api/modification/:id/decision", customJwtRequired(), requireRoles(ROLE_REFERENT), async (req, res) => {
 	try {
 		const data = req.body;
@@ -209,7 +202,7 @@ api.post("/api/modification/:id/decision", customJwtRequired(), requireRoles(ROL
 
 		await db.tx(async (t) => {
 			if (new_status == "rejected") {
-				// ---- restore the previous mapping from the snapshot, atomically ----
+				// restore the previous mapping from the snapshot, atomically 
 				await t.none(`DELETE FROM mapped_exams WHERE application_id=$1`, [mod.application_id]);
 				let snapshot = await t.any(`SELECT * FROM la_modification_exams WHERE modification_id=$1`, [mod.id]);
 				for (const s of snapshot) {
@@ -219,7 +212,7 @@ api.post("/api/modification/:id/decision", customJwtRequired(), requireRoles(ROL
 						[mod.application_id, s.host_exam_id, s.sending_exam_id, s.grade, s.date_passed, s.status, s.notes, s.decision_date]
 					);
 				}
-				// --- restore the previous la through the deletion of the modification document_id
+				// restore the previous la through the deletion of the modification document_id
 				if (original_doc != null) {
 					await t.none(`DELETE FROM uploaded_documents WHERE id=$1`, [mod.document_id]);
 				}

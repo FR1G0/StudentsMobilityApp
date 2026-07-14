@@ -24,6 +24,7 @@ const UPLOADS_BASE_DIR = path.join(
 	"applications"
 );
 
+//	centralized way of retrieving upload directory
 function applicationUploadDir(application_id) {
 	return path.join(UPLOADS_BASE_DIR, String(application_id));
 }
@@ -38,12 +39,12 @@ async function pathExists(p) {
 	}
 }
 
-// same columns as Application.to_dict(), date columns casted to text
+// list of all accessible fields for application
 const APPLICATION_COLUMNS = `id, year, semester, status, date_submitted,
 	date_arrived::text AS date_arrived, date_departure::text AS date_departure,
 	notes, referent_id, sending_institution, host_institution, user_id`;
 
-// OK: [GET] /applications
+// [GET] /api/applications
 // returns the list of applications visible to the current user based on role
 api.get("/api/applications", customJwtRequired(), async (req, res) => {
 	try {
@@ -65,7 +66,7 @@ api.get("/api/applications", customJwtRequired(), async (req, res) => {
 	}
 })
 
-// TEST: [POST] /application/insert
+// [POST] /api/application/insert
 // creates a new application row (student only) and prepares its uploads directory
 api.post("/api/application/insert", customJwtRequired(), requireRoles(ROLE_STUDENT), async (req, res) => {
 	try {
@@ -98,11 +99,11 @@ api.post("/api/application/insert", customJwtRequired(), requireRoles(ROLE_STUDE
 	}
 })
 
-// PASSED: [POST] /application/update/:id
+// [POST] /api/application/update/:id
 // updates the editable fields of an application (student, own application only).
 // status is intentionally excluded: it has its own workflow route.
 api.post("/api/application/update/:id", customJwtRequired(), requireRoles(ROLE_STUDENT), async (req, res) => {
-	try {
+try {
 		const data = req.body;
 		if (!data) {
 			return res.status(400).json({ status: "failed", error: "missing body" });
@@ -190,7 +191,7 @@ api.post("/api/application/update/:id", customJwtRequired(), requireRoles(ROLE_S
 				 application.date_arrived, application.date_departure, application.id]
 			);
 		} catch (error) {
-			// DB triggers/constraints enforce workflow rules; surface them as a 400
+			// DB triggers/constraints enforce workflow rules, surface them 
 			return res.status(400).json({ status: "failed", error: extractDbError(error) });
 		}
 
@@ -200,8 +201,8 @@ api.post("/api/application/update/:id", customJwtRequired(), requireRoles(ROLE_S
 	}
 })
 
-// NOTE: [POST] /application/status/update/:id
-// updates the application status, following a very specific workflow
+// [POST] /api/application/status/update/:id
+// updates the application status, following a very specific workflow, guarded by postgresql triggers
 api.post("/api/application/status/update/:id", customJwtRequired(), requireRoles(ROLE_STUDENT, ROLE_REFERENT, ROLE_OVERSEAS), async (req, res) => {
 	try {
 		const data = req.body;
@@ -209,10 +210,11 @@ api.post("/api/application/status/update/:id", customJwtRequired(), requireRoles
 			return res.status(400).json({ status: "failed", error: "missing body" });
 		}
 
-		// this route only moves the status, so it must always be present
 		if (!("status" in data)) {
 			return res.status(400).json({ status: "failed", error: "missing status" });
 		}
+
+		// access check
 
 		let application = await db.oneOrNone(`SELECT * FROM applications WHERE id=$1`, [parseInt(req.params.id, 10)]);
 		if (!application) {
@@ -224,13 +226,14 @@ api.post("/api/application/status/update/:id", customJwtRequired(), requireRoles
 			return res.status(403).json({ status: "failed", error: "cannot modify this application" });
 		}
 
+		//	students can only update the status to mobility ongoing or exam_recognition
 		if (role == ROLE_STUDENT) {
 			if (!["mobility_ongoing", "exam_recognition"].includes(data.status)) {
 				return res.status(403).json({ status: "failed", error: "student cannot set this status" });
 			}
 		}
 
-		// check referent
+		//	referent can only updated the status to created or learning agreement pending
 		if (role == ROLE_REFERENT) {
 			const referent_allowed_fields = ["status", "notes"];
 			const extra_fields = Object.keys(data).filter((field) => !referent_allowed_fields.includes(field));
@@ -242,7 +245,7 @@ api.post("/api/application/status/update/:id", customJwtRequired(), requireRoles
 			}
 		}
 
-		// check staff
+		//	overseas staff can only update the status to pre_departure_completed or closed
 		if (role == ROLE_OVERSEAS) {
 			const overseas_allowed_fields = ["status"];
 			const extra_fields = Object.keys(data).filter((field) => !overseas_allowed_fields.includes(field));
@@ -266,8 +269,8 @@ api.post("/api/application/status/update/:id", customJwtRequired(), requireRoles
 	}
 })
 
-// PASSED: [POST] /application/delete/:id
-// deletes the application row identified by :id (student and staff only), both student and staff can delete applications
+// [POST] /api/application/delete/:id
+// deletes the application row identified by :id (student and staff only)
 api.post("/api/application/delete/:id", customJwtRequired(), requireRoles(ROLE_STUDENT, ROLE_OVERSEAS), async (req, res) => {
 	try {
 		let application = await db.oneOrNone(`SELECT * FROM applications WHERE id=$1`, [parseInt(req.params.id, 10)]);
@@ -292,15 +295,15 @@ api.post("/api/application/delete/:id", customJwtRequired(), requireRoles(ROLE_S
 
 //   -------  APPLICATION INFORMATION SECTION  -------
 
-// PASSED: [GET] /applications/info/list
+// [GET] /api/applications/info/list
 // returns the list of applications visible to the current user (same role
-// scoping as /applications) together with their sending/host institutions,
-// the owner student and the referent (joined data), in json format
+// scoping as /applications) but with way more relevant information.
 api.get("/api/applications/info/list", customJwtRequired(), async (req, res) => {
 	try {
 		const user = req.currentUser;
 		const role = req.currentUserRole;
 		let applications;
+		// fetch application data based on role
 		if (role == ROLE_STUDENT) {
 			applications = await db.any(`SELECT ${APPLICATION_COLUMNS} FROM applications WHERE user_id=$1`, [user.id]);
 		} else if (role == ROLE_REFERENT) {
@@ -314,6 +317,7 @@ api.get("/api/applications/info/list", customJwtRequired(), async (req, res) => 
 		// batch-fetch related rows to avoid one query per application
 		let institution_ids = [];
 		let user_ids = [];
+		// assemble only relevant user and institution id's
 		for (const a of applications) {
 			if (!institution_ids.includes(a.sending_institution)) {
 				institution_ids.push(a.sending_institution);
@@ -329,15 +333,18 @@ api.get("/api/applications/info/list", customJwtRequired(), async (req, res) => 
 			}
 		}
 
+		// fetch relevant institutions only
 		let institution_rows = [];
 		if (institution_ids.length > 0) {
 			institution_rows = await db.any(`SELECT id,name,country,city FROM institutions WHERE id IN ($1:csv)`, [institution_ids]);
 		}
+		// fetch relevant users only
 		let user_rows = [];
 		if (user_ids.length > 0) {
 			user_rows = await db.any(`SELECT id,email,firstname,lastname FROM users WHERE id IN ($1:csv)`, [user_ids]);
 		}
 
+		// assemble institition dict for ease of access
 		let institutions = {};
 		for (const row of institution_rows) {
 			institutions[row.id] = row;
@@ -348,12 +355,15 @@ api.get("/api/applications/info/list", customJwtRequired(), async (req, res) => 
 		}
 
 		let result = [];
+		// assemble the massive json object
 		for (const application of applications) {
+			// put aside only relevant data
 			const sending = institutions[application.sending_institution];
 			const host = institutions[application.host_institution];
 			const owner = users[application.user_id];
 			const referent = users[application.referent_id];
 
+			// item has a structure that is an extension of application + new fields:
 			let item = application;
 			item.sending = sending ? { id: sending.id, name: sending.name } : null;
 			item.host = host ? { id: host.id, name: host.name } : null;
@@ -377,16 +387,15 @@ api.get("/api/applications/info/list", customJwtRequired(), async (req, res) => 
 	}
 })
 
-// PASSED: [GET] /application/info/semester
+// [GET] /api/application/info/semester
 // returns the list of allowed semester values
-// for frontend
 api.get("/api/application/info/semester", (req, res) => {
 	const semesters = ["first", "second", "full"];
 	res.status(200).json(semesters);
 })
 
-// OK: [GET] /application/info/status
-// returns the list of allowed application status values, for frontend
+// [GET] /api/application/info/status
+// returns the list of allowed application status values
 api.get("/api/application/info/status", (req, res) => {
 	const statuses = [
 		"created",
@@ -399,7 +408,7 @@ api.get("/api/application/info/status", (req, res) => {
 	res.status(200).json(statuses);
 })
 
-// OK: [GET] /application/info/academic_years, for frontend
+// [GET] /api/application/info/academic_years, for frontend
 // returns the list of academic years starting from the current year for 5 years
 api.get("/api/application/info/academic_years", (req, res) => {
 	const current_year = new Date().getFullYear();
@@ -414,7 +423,7 @@ api.get("/api/application/info/academic_years", (req, res) => {
 
 //   -------  DOCUMENT SECTION  -------
 
-// TEST: [POST] /application/documents/:id
+// [POST] /api/application/documents/:id
 // returns the list of all uploaded documents associated to the given application
 api.post("/api/application/documents/:id", customJwtRequired(), async (req, res) => {
 	try {
@@ -438,11 +447,10 @@ api.post("/api/application/documents/:id", customJwtRequired(), async (req, res)
 	}
 })
 
-// OK: [POST] /application/document/insert
+// [POST] /api/application/document/insert
 // inserts a new uploaded_document **row only** using the json body data
 // FIXED: file_path is sanitized to basename on insert; delete/download resolve
-// against the owning application's upload dir instead of trusting the stored path
-// this probably happens elsewhere in the code also, need to fix.
+// against the owning application's upload dir instead of trusting the stored path.
 api.post("/api/application/document/insert", customJwtRequired(), requireRoles(ROLE_STUDENT), async (req, res) => {
 	try {
 		const data = req.body;
@@ -476,7 +484,7 @@ api.post("/api/application/document/insert", customJwtRequired(), requireRoles(R
 		if (!safe_file_path) {
 			return res.status(400).json({ status: "failed", error: "missing or invalid file_path" });
 		}
-		// status='pending' is a client-side ORM default in flask, the DB column has no default
+
 		let new_doc = await db.one(
 			`INSERT INTO uploaded_documents (document_type, file_path, user_id, application_id, notes, status)
 			 VALUES ($1,$2,$3,$4,$5,'pending') RETURNING id`,
@@ -488,7 +496,7 @@ api.post("/api/application/document/insert", customJwtRequired(), requireRoles(R
 	}
 })
 
-// OK: [POST] /application/document/upload
+// [POST] /api/application/document/upload
 // uploads a file from form-data ("myfile") into uploads/applications/:application_id/
 api.post("/api/application/document/upload", customJwtRequired(), requireRoles(ROLE_STUDENT), upload.single("myfile"), async (req, res) => {
 	try {
@@ -527,7 +535,7 @@ api.post("/api/application/document/upload", customJwtRequired(), requireRoles(R
 	}
 })
 
-// OK: [POST] /application/document/:id/delete
+// [POST] /api/application/document/:id/delete
 // deletes the uploaded file from disk and removes the related document row
 api.post("/api/application/document/:id/delete", customJwtRequired(), requireRoles(ROLE_STUDENT), async (req, res) => {
 	try {
@@ -565,7 +573,7 @@ api.post("/api/application/document/:id/delete", customJwtRequired(), requireRol
 	}
 })
 
-// OK: [GET] /application/document/:id/download
+// [GET] /api/application/document/:id/download
 // sends the uploaded file back so the frontend can download it, allows anyone that has access to that application to download/view the documents
 api.get("/api/application/document/:id/download", customJwtRequired(), async (req, res) => {
 	try {
@@ -595,7 +603,7 @@ api.get("/api/application/document/:id/download", customJwtRequired(), async (re
 	}
 })
 
-// OK: [POST] /application/document/:id/decision
+// [POST] /api/application/document/:id/decision
 // referent approves or rejects an uploaded document (learning agreement / transcript),
 // recording a motivation; decision_date is stamped by a DB trigger
 api.post("/api/application/document/:id/decision", customJwtRequired(), requireRoles(ROLE_REFERENT), async (req, res) => {
@@ -630,7 +638,7 @@ api.post("/api/application/document/:id/decision", customJwtRequired(), requireR
 		if ("notes" in data) {
 			notes = data.notes;
 		}
-		// a rejection must carry a motivation
+		// document rejection must carry a motivation
 		if (new_status == "rejected" && !(notes && notes.trim())) {
 			return res.status(400).json({ status: "failed", error: "rejection requires a motivation" });
 		}
@@ -643,7 +651,7 @@ api.post("/api/application/document/:id/decision", customJwtRequired(), requireR
 	}
 })
 
-// OK: [GET] /application/exams_mapping/:application_id
+// [GET] /api/application/exams_mapping/:application_id
 // returns the list of mapped_exams rows associated to the given application, anyone with access to the application can view the associated exam mappings.
 api.get("/api/application/exams_mapping/:application_id", customJwtRequired(), async (req, res) => {
 	try {
@@ -669,14 +677,14 @@ api.get("/api/application/exams_mapping/:application_id", customJwtRequired(), a
 
 //   -------  DOCUMENT INFORMATION SECTION  -------
 
-// OK: [GET] /application/document/info/type
+// [GET] /api/application/document/info/type
 // returns the list of allowed document types, for frontend
 api.get("/api/application/document/info/type", (req, res) => {
 	const types = ["learning_agreement", "transcript"];
 	res.status(200).json(types);
 })
 
-// OK: [GET] /application/document/info/status
+// [GET] /api/application/document/info/status
 // returns the list of allowed document status values
 api.get("/api/application/document/info/status", (req, res) => {
 	const statuses = ["pending", "approved", "rejected"];

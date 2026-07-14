@@ -12,7 +12,7 @@ export function extractDbError(error) {
 	return String(error);
 }
 
-// NOTE: [GET] /api/health
+// [GET] /api/health
 // returns the database status and the row counts of the main tables
 api.get("/api/health", async (req, res) => {
 	try {
@@ -42,7 +42,7 @@ api.get("/api/health", async (req, res) => {
 	}
 })
 
-// NOTE: [GET] /api/summary
+// [GET] /api/summary
 // returns global counts, the 5 most recent applications and the top 5 institutions
 api.get("/api/summary", customJwtRequired(), async (req, res) => {
 	try {
@@ -104,7 +104,7 @@ api.get("/api/summary", customJwtRequired(), async (req, res) => {
 	}
 })
 
-// NOTE: [GET] /api/exams
+// [GET] /api/exams
 // returns the list of all exams joined with their institution
 api.get("/api/exams", customJwtRequired(), async (req, res) => {
 	try {
