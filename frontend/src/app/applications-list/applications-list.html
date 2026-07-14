@@ -133,6 +133,8 @@
                     <span class="mdi mdi-pencil-outline text-sm"></span>
                     Modify
                   </button>
+                }
+                @if (role === 'student' || role === 'staff') {
                   <button
                     type="button"
                     (click)="deleteApplication(application); closeMenu()"
