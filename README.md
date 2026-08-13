@@ -1,4 +1,13 @@
 # StudentMobilityApp
+![Preview Image of StudentMobilityApp Ui](https://github.com/user-attachments/assets/dba4510a-64e3-493d-bb8a-dd29593782e2 "Image Preview of StudentMobilityApp")
+## About
+
+StudentMobilityApp is a web application (backend, frontend, database) designed to manage and streamline the Erasmus+ / Overseas mobility process for university students. It provides a secure, centralized, and role-governed workflow environment to handle the complete lifecycle of a mobility program—from initial application to final credit recognition.
+
+### Key Features
+* **Students:** Submit mobility applications, manage study plan course mappings, upload signed Learning Agreements, update mobility dates, and upload Transcripts of Records for grade conversion.
+* **Academic Advisors (Referent Lecturers):** Review and evaluate proposed course mappings, approve or reject Learning Agreements with feedback, and validate official exam recognitions.
+* **Overseas Mobility Office:** Moderate overall application progress, conduct pre-departure compliance checks, oversee documentation, and officially close finalized mobility files.
 
 ## Requirements
 
